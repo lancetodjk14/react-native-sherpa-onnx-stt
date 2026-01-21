@@ -67,26 +67,84 @@ class SherpaOnnxSttModule(reactContext: ReactApplicationContext) :
 
   /**
    * Resolve asset path - copy from assets to internal storage if needed
+   * Preserves the directory structure from assets (e.g., test_wavs/ stays as test_wavs/)
    */
   private fun resolveAssetPath(assetPath: String): String {
     val assetManager = reactApplicationContext.assets
-    val targetDir = File(reactApplicationContext.filesDir, "models")
-    targetDir.mkdirs()
+    
+    // Extract base directory from path (e.g., "test_wavs/en-1.wav" -> "test_wavs", "models/sherpa-onnx-model" -> "models")
+    val pathParts = assetPath.split("/")
+    val baseDir = if (pathParts.size > 1) pathParts[0] else "models"
+    
+    val targetBaseDir = File(reactApplicationContext.filesDir, baseDir)
+    targetBaseDir.mkdirs()
 
-    val modelDir = File(targetDir, File(assetPath).name)
+    // Check if it's a file path (contains a file extension) or directory path
+    val isFilePath = pathParts.any { it.contains(".") && !it.startsWith(".") }
+    
+    val targetPath = if (isFilePath) {
+      // It's a file path (e.g., test_wavs/en-1.wav)
+      // Return the full file path
+      File(targetBaseDir, pathParts.drop(1).joinToString("/"))
+    } else {
+      // It's a directory path (e.g., models/sherpa-onnx-model)
+      // Return the directory path
+      File(targetBaseDir, File(assetPath).name)
+    }
     
     // Check if already extracted
-    if (modelDir.exists() && modelDir.isDirectory) {
-      return modelDir.absolutePath
-    }
-
-    // Extract from assets recursively
-    try {
-      modelDir.mkdirs()
-      copyAssetRecursively(assetManager, assetPath, modelDir)
-      return modelDir.absolutePath
-    } catch (e: Exception) {
-      throw IllegalArgumentException("Failed to extract asset: $assetPath", e)
+    if (isFilePath) {
+      // For files, check if file exists
+      if (targetPath.exists() && targetPath.isFile) {
+        return targetPath.absolutePath
+      }
+      // Extract the parent directory (e.g., test_wavs/)
+      val parentDir = targetPath.parentFile ?: targetBaseDir
+      parentDir.mkdirs()
+      
+      // Try to copy the file directly first
+      try {
+        assetManager.open(assetPath).use { input ->
+          FileOutputStream(targetPath).use { output ->
+            input.copyTo(output)
+          }
+        }
+        return targetPath.absolutePath
+      } catch (e: java.io.FileNotFoundException) {
+        // If direct file open fails, try to copy the parent directory recursively
+        // This handles cases where the file is in a subdirectory
+        val parentAssetPath = pathParts.dropLast(1).joinToString("/")
+        if (parentAssetPath.isNotEmpty()) {
+          try {
+            // Copy the entire parent directory
+            copyAssetRecursively(assetManager, parentAssetPath, parentDir)
+            // Check if file now exists
+            if (targetPath.exists() && targetPath.isFile) {
+              return targetPath.absolutePath
+            }
+            throw IllegalArgumentException("File not found after copying parent directory: $assetPath")
+          } catch (dirException: Exception) {
+            throw IllegalArgumentException("Failed to extract asset file: $assetPath. Tried direct copy and directory copy.", dirException)
+          }
+        } else {
+          throw IllegalArgumentException("Failed to extract asset file: $assetPath", e)
+        }
+      } catch (e: Exception) {
+        throw IllegalArgumentException("Failed to extract asset file: $assetPath", e)
+      }
+    } else {
+      // For directories, check if directory exists
+      if (targetPath.exists() && targetPath.isDirectory) {
+        return targetPath.absolutePath
+      }
+      // Extract from assets recursively
+      try {
+        targetPath.mkdirs()
+        copyAssetRecursively(assetManager, assetPath, targetPath)
+        return targetPath.absolutePath
+      } catch (e: Exception) {
+        throw IllegalArgumentException("Failed to extract asset directory: $assetPath", e)
+      }
     }
   }
 
@@ -172,7 +230,7 @@ class SherpaOnnxSttModule(reactContext: ReactApplicationContext) :
    * Initialize sherpa-onnx with model directory.
    * Phase 1: Stub implementation
    */
-  override fun initializeSherpaOnnx(modelDir: String, promise: Promise) {
+  override fun initializeSherpaOnnx(modelDir: String, preferInt8: Boolean?, promise: Promise) {
     try {
       // Verify model directory exists
       val modelDirFile = File(modelDir)
@@ -190,7 +248,7 @@ class SherpaOnnxSttModule(reactContext: ReactApplicationContext) :
         return
       }
       
-      val success = nativeInitialize(modelDir)
+      val success = nativeInitialize(modelDir, preferInt8 ?: false, preferInt8 != null)
       if (success) {
         promise.resolve(null)
       } else {
@@ -238,7 +296,7 @@ class SherpaOnnxSttModule(reactContext: ReactApplicationContext) :
     private external fun nativeTestSherpaInit(): String
 
     @JvmStatic
-    private external fun nativeInitialize(modelDir: String): Boolean
+    private external fun nativeInitialize(modelDir: String, preferInt8: Boolean, hasPreferInt8: Boolean): Boolean
 
     @JvmStatic
     private external fun nativeTranscribeFile(filePath: String): String

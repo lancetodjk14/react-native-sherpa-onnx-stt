@@ -39,7 +39,8 @@
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "test": "jest",
-    "release": "release-it --only-version"
+    "release": "release-it --only-version",
+    "prettier": "npx prettier --write ."
   },
   "keywords": [
     "react-native",
@@ -137,7 +138,11 @@
       "@commitlint/config-conventional"
     ],
     "rules": {
-      "header-max-length": [2, "always", 300]
+      "header-max-length": [
+        2,
+        "always",
+        300
+      ]
     }
   },
   "release-it": {

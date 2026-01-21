@@ -21,8 +21,10 @@ export interface Spec extends TurboModule {
   /**
    * Initialize sherpa-onnx with model directory.
    * Expects an absolute path (use resolveModelPath first for asset/file paths).
+   * @param modelDir - Absolute path to model directory
+   * @param preferInt8 - Optional: true = prefer int8 models, false = prefer regular models, undefined = try int8 first (default)
    */
-  initializeSherpaOnnx(modelDir: string): Promise<void>;
+  initializeSherpaOnnx(modelDir: string, preferInt8?: boolean): Promise<void>;
 
   /**
    * Transcribe an audio file.

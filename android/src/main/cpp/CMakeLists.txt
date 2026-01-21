@@ -55,15 +55,42 @@ add_library(sherpaonnxstt SHARED
     ${SOURCES}
 )
 
+# Try to find sherpa-onnx headers
+# Check common locations: git submodule
+# The headers use "sherpa-onnx/csrc/..." includes, so we need to add
+# the directory that contains "sherpa-onnx" as a subdirectory
+set(SHERPA_ONNX_INCLUDE_DIRS "")
+set(POSSIBLE_BASE_PATHS
+    "${PROJECT_ROOT}/sherpa-onnx"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../sherpa-onnx"
+)
+
+foreach(BASE_PATH ${POSSIBLE_BASE_PATHS})
+    if(EXISTS "${BASE_PATH}/sherpa-onnx/c-api/cxx-api.h")
+        list(APPEND SHERPA_ONNX_INCLUDE_DIRS "${BASE_PATH}")
+        message(STATUS "Found sherpa-onnx headers, adding include directory: ${BASE_PATH}")
+        break()  # Found it, no need to check other paths
+    endif()
+endforeach()
+
+if(SHERPA_ONNX_INCLUDE_DIRS STREQUAL "")
+    message(WARNING "sherpa-onnx headers not found. Please ensure sherpa-onnx git submodule is initialized.")
+endif()
+
 # Include directories (must be after add_library)
 target_include_directories(sherpaonnxstt PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/jni
+    ${SHERPA_ONNX_INCLUDE_DIRS}
 )
+
+# Also link onnxruntime (required dependency)
+set(ONNXRUNTIME_LIB "${EXTRACTED_LIBS_DIR}/libonnxruntime.so")
 
 # Link libraries
 target_link_libraries(sherpaonnxstt
     ${SHERPA_ONNX_LIB}
+    ${ONNXRUNTIME_LIB}
     log
     android
 )

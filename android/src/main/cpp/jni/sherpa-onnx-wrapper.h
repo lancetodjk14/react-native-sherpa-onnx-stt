@@ -18,9 +18,10 @@ public:
     /**
      * Initialize sherpa-onnx with model directory.
      * @param modelDir Path to the model directory
+     * @param preferInt8 Optional: true = prefer int8 models, false = prefer regular models, nullopt = try int8 first (default)
      * @return true if successful, false otherwise
      */
-    bool initialize(const std::string& modelDir);
+    bool initialize(const std::string& modelDir, const std::optional<bool>& preferInt8 = std::nullopt);
 
     /**
      * Transcribe an audio file.

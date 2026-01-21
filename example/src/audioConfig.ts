@@ -7,14 +7,17 @@
 
 export const TEST_AUDIO_FILES = {
   // English test files (for Zipformer model)
-  EN_1: 'test_wavs/en-1.wav',
-  EN_2: 'test_wavs/en-2.wav',
-  EN_3: 'test_wavs/en-3.wav',
+  EN_1: 'test_wavs/0-en.wav',
+  EN_2: 'test_wavs/1-en.wav',
+  EN_3: 'test_wavs/8k-en.wav',
 
   // Chinese test files (for Paraformer model)
-  ZH_1: 'test_wavs/zh-1.wav',
-  ZH_2: 'test_wavs/zh-2.wav',
-  ZH_3: 'test_wavs/zh-3.wav',
+  ZH_1: 'test_wavs/0-zh.wav',
+  ZH_2: 'test_wavs/1-zh.wav',
+  ZH_3: 'test_wavs/8k-zh.wav',
+
+  // Mixed language files (for Paraformer model)
+  ZH_EN_1: 'test_wavs/2-zh-en.wav',
 } as const;
 
 export type AudioFileId =
@@ -63,6 +66,12 @@ export const AUDIO_FILES: AudioFileInfo[] = [
     name: '中文样本 3',
     description: 'Chinese audio sample 3',
     language: 'zh',
+  },
+  {
+    id: TEST_AUDIO_FILES.ZH_EN_1,
+    name: '中英混合样本',
+    description: 'Chinese-English mixed audio sample',
+    language: 'zh', // Paraformer supports both, so we can categorize it as 'zh'
   },
 ];
 

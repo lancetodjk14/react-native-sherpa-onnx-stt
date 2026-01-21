@@ -63,9 +63,16 @@ export async function resolveModelPath(
  *   modelPath: { type: 'asset', path: 'models/sherpa-onnx-model' }
  * });
  *
- * // File system model
+ * // File system model with preferInt8 option
  * await initializeSherpaOnnx({
- *   modelPath: { type: 'file', path: '/path/to/model' }
+ *   modelPath: { type: 'file', path: '/path/to/model' },
+ *   preferInt8: true  // Prefer quantized int8 models (smaller, faster)
+ * });
+ *
+ * // Prefer regular models (higher accuracy)
+ * await initializeSherpaOnnx({
+ *   modelPath: { type: 'asset', path: 'models/sherpa-onnx-model' },
+ *   preferInt8: false
  * });
  * ```
  */
@@ -73,13 +80,19 @@ export async function initializeSherpaOnnx(
   options: InitializeOptions | InitializeOptions['modelPath']
 ): Promise<void> {
   // Handle both object syntax and direct path syntax
-  const modelPath =
-    typeof options === 'object' && 'modelPath' in options
-      ? options.modelPath
-      : (options as InitializeOptions['modelPath']);
+  let modelPath: InitializeOptions['modelPath'];
+  let preferInt8: boolean | undefined;
+
+  if (typeof options === 'object' && 'modelPath' in options) {
+    modelPath = options.modelPath;
+    preferInt8 = options.preferInt8;
+  } else {
+    modelPath = options as InitializeOptions['modelPath'];
+    preferInt8 = undefined;
+  }
 
   const resolvedPath = await resolveModelPath(modelPath);
-  return SherpaOnnxStt.initializeSherpaOnnx(resolvedPath);
+  return SherpaOnnxStt.initializeSherpaOnnx(resolvedPath, preferInt8);
 }
 
 /**

@@ -36,4 +36,12 @@ export interface InitializeOptions {
    * Model directory path configuration
    */
   modelPath: ModelPathConfig | string; // string for backward compatibility
+
+  /**
+   * Model quantization preference
+   * - true: Prefer int8 quantized models (model.int8.onnx) - smaller, faster
+   * - false: Prefer regular models (model.onnx) - higher accuracy
+   * - undefined: Try int8 first, then fall back to regular (default behavior)
+   */
+  preferInt8?: boolean;
 }

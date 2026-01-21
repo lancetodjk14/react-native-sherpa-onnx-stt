@@ -1,6 +1,7 @@
 // Include standard library headers first to avoid conflicts with jni.h
 #include <string>
 #include <memory>
+#include <optional>
 
 // Then include JNI headers
 #include <jni.h>
@@ -24,7 +25,9 @@ JNIEXPORT jboolean JNICALL
 Java_com_sherpaonnxstt_SherpaOnnxSttModule_nativeInitialize(
     JNIEnv *env,
     jobject /* this */,
-    jstring modelDir) {
+    jstring modelDir,
+    jboolean preferInt8,
+    jboolean hasPreferInt8) {
     try {
         if (g_wrapper == nullptr) {
             g_wrapper = std::make_unique<SherpaOnnxWrapper>();
@@ -37,7 +40,13 @@ Java_com_sherpaonnxstt_SherpaOnnxSttModule_nativeInitialize(
         }
 
         std::string modelDirPath(modelDirStr);
-        bool result = g_wrapper->initialize(modelDirPath);
+        // Convert Java boolean to C++ optional<bool>
+        std::optional<bool> preferInt8Opt;
+        if (hasPreferInt8 == JNI_TRUE) {
+            preferInt8Opt = (preferInt8 == JNI_TRUE);
+        }
+        
+        bool result = g_wrapper->initialize(modelDirPath, preferInt8Opt);
         env->ReleaseStringUTFChars(modelDir, modelDirStr);
 
         if (!result) {
