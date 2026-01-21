@@ -29,6 +29,11 @@ export type ModelPathConfig =
     };
 
 /**
+ * Model type for explicit model detection
+ */
+export type ModelType = 'transducer' | 'paraformer' | 'nemo_ctc' | 'auto';
+
+/**
  * Model initialization options
  */
 export interface InitializeOptions {
@@ -44,4 +49,13 @@ export interface InitializeOptions {
    * - undefined: Try int8 first, then fall back to regular (default behavior)
    */
   preferInt8?: boolean;
+
+  /**
+   * Explicit model type specification
+   * - 'transducer': Force detection as Zipformer/Transducer model
+   * - 'paraformer': Force detection as Paraformer model
+   * - 'nemo_ctc': Force detection as NeMo CTC model
+   * - 'auto': Automatic detection based on files (default)
+   */
+  modelType?: ModelType;
 }

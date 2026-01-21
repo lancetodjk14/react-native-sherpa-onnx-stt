@@ -230,7 +230,12 @@ class SherpaOnnxSttModule(reactContext: ReactApplicationContext) :
    * Initialize sherpa-onnx with model directory.
    * Phase 1: Stub implementation
    */
-  override fun initializeSherpaOnnx(modelDir: String, preferInt8: Boolean?, promise: Promise) {
+  override fun initializeSherpaOnnx(
+    modelDir: String,
+    preferInt8: Boolean?,
+    modelType: String?,
+    promise: Promise
+  ) {
     try {
       // Verify model directory exists
       val modelDirFile = File(modelDir)
@@ -296,7 +301,12 @@ class SherpaOnnxSttModule(reactContext: ReactApplicationContext) :
     private external fun nativeTestSherpaInit(): String
 
     @JvmStatic
-    private external fun nativeInitialize(modelDir: String, preferInt8: Boolean, hasPreferInt8: Boolean): Boolean
+    private external fun nativeInitialize(
+      modelDir: String,
+      preferInt8: Boolean,
+      hasPreferInt8: Boolean,
+      modelType: String
+    ): Boolean
 
     @JvmStatic
     private external fun nativeTranscribeFile(filePath: String): String

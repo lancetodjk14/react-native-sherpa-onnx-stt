@@ -152,7 +152,7 @@ def extractNativeLibs = tasks.register("extractNativeLibs") {
     }
     
     if (!foundAar) {
-      throw new GradleException("No AAR file found for sherpa-onnx. Check if the dependency is correctly resolved.")
+      throw new RuntimeException("No AAR file found for sherpa-onnx. Check if the dependency is correctly resolved.")
     }
   }
 }

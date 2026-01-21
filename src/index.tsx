@@ -1,8 +1,8 @@
 import SherpaOnnxStt from './NativeSherpaOnnxStt';
-import type { InitializeOptions } from './types';
+import type { InitializeOptions, ModelType } from './types';
 
 // Export types and utilities
-export type { InitializeOptions, ModelPathConfig } from './types';
+export type { InitializeOptions, ModelPathConfig, ModelType } from './types';
 export {
   assetModelPath,
   autoModelPath,
@@ -74,6 +74,12 @@ export async function resolveModelPath(
  *   modelPath: { type: 'asset', path: 'models/sherpa-onnx-model' },
  *   preferInt8: false
  * });
+ *
+ * // With explicit model type for robustness
+ * await initializeSherpaOnnx({
+ *   modelPath: { type: 'asset', path: 'models/sherpa-onnx-nemo-parakeet-tdt-ctc-en' },
+ *   modelType: 'nemo_ctc'  // Explicitly specify CTC model type
+ * });
  * ```
  */
 export async function initializeSherpaOnnx(
@@ -82,17 +88,24 @@ export async function initializeSherpaOnnx(
   // Handle both object syntax and direct path syntax
   let modelPath: InitializeOptions['modelPath'];
   let preferInt8: boolean | undefined;
+  let modelType: ModelType | undefined;
 
   if (typeof options === 'object' && 'modelPath' in options) {
     modelPath = options.modelPath;
     preferInt8 = options.preferInt8;
+    modelType = options.modelType;
   } else {
     modelPath = options as InitializeOptions['modelPath'];
     preferInt8 = undefined;
+    modelType = undefined;
   }
 
   const resolvedPath = await resolveModelPath(modelPath);
-  return SherpaOnnxStt.initializeSherpaOnnx(resolvedPath, preferInt8);
+  return SherpaOnnxStt.initializeSherpaOnnx(
+    resolvedPath,
+    preferInt8,
+    modelType
+  );
 }
 
 /**

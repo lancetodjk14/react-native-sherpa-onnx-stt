@@ -18,6 +18,7 @@ import {
 export const MODELS = {
   ZIPFORMER_EN: 'sherpa-onnx-zipformer-small-en',
   PARAFORMER_ZH: 'sherpa-onnx-paraformer-zh-small',
+  NEMO_CTC_EN: 'sherpa-onnx-nemo-parakeet-tdt-ctc-en',
 } as const;
 
 export type ModelId = (typeof MODELS)[keyof typeof MODELS];

@@ -44,7 +44,11 @@ SherpaOnnxWrapper::~SherpaOnnxWrapper() {
     LOGI("SherpaOnnxWrapper destroyed");
 }
 
-bool SherpaOnnxWrapper::initialize(const std::string& modelDir, const std::optional<bool>& preferInt8) {
+bool SherpaOnnxWrapper::initialize(
+    const std::string& modelDir,
+    const std::optional<bool>& preferInt8,
+    const std::optional<std::string>& modelType
+) {
     if (pImpl->initialized) {
         release();
     }
@@ -94,6 +98,8 @@ bool SherpaOnnxWrapper::initialize(const std::string& modelDir, const std::optio
         std::string joinerPath = modelDir + "/joiner.onnx";
         std::string paraformerPathInt8 = modelDir + "/model.int8.onnx";
         std::string paraformerPath = modelDir + "/model.onnx";
+        std::string ctcPathInt8 = modelDir + "/model.int8.onnx";
+        std::string ctcPath = modelDir + "/model.onnx";
         std::string tokensPath = modelDir + "/tokens.txt";
 
         // Check if tokens file exists (required for both model types)
@@ -131,28 +137,107 @@ bool SherpaOnnxWrapper::initialize(const std::string& modelDir, const std::optio
             }
         }
         
-        if (!paraformerModelPath.empty()) {
-            // Paraformer model
-            LOGI("Detected Paraformer model: %s", paraformerModelPath.c_str());
-            config.model_config.paraformer.model = paraformerModelPath;
-        } else if (fileExists(encoderPath) && 
-                   fileExists(decoderPath) && 
-                   fileExists(joinerPath)) {
-            // Zipformer/Transducer model
-            LOGI("Detected Transducer model: encoder=%s, decoder=%s, joiner=%s", 
-                 encoderPath.c_str(), decoderPath.c_str(), joinerPath.c_str());
-            config.model_config.transducer.encoder = encoderPath;
-            config.model_config.transducer.decoder = decoderPath;
-            config.model_config.transducer.joiner = joinerPath;
+        // Check for CTC model (NeMo CTC) - similar structure to Paraformer
+        std::string ctcModelPath;
+        if (preferInt8.has_value()) {
+            if (preferInt8.value()) {
+                // Prefer int8 models
+                if (fileExists(ctcPathInt8)) {
+                    ctcModelPath = ctcPathInt8;
+                } else if (fileExists(ctcPath)) {
+                    ctcModelPath = ctcPath;
+                }
+            } else {
+                // Prefer regular models
+                if (fileExists(ctcPath)) {
+                    ctcModelPath = ctcPath;
+                } else if (fileExists(ctcPathInt8)) {
+                    ctcModelPath = ctcPathInt8;
+                }
+            }
         } else {
+            // Default: try int8 first, then regular
+            if (fileExists(ctcPathInt8)) {
+                ctcModelPath = ctcPathInt8;
+            } else if (fileExists(ctcPath)) {
+                ctcModelPath = ctcPath;
+            }
+        }
+        
+        // Determine model type: use explicit type if provided, otherwise auto-detect
+        bool hasTransducer = fileExists(encoderPath) && 
+                             fileExists(decoderPath) && 
+                             fileExists(joinerPath);
+        
+        // Check if directory name suggests CTC model (contains "nemo", "ctc", "parakeet")
+        bool isLikelyCtc = modelDir.find("nemo") != std::string::npos ||
+                           modelDir.find("ctc") != std::string::npos ||
+                           modelDir.find("parakeet") != std::string::npos;
+        
+        bool modelConfigured = false;
+        
+        // Use explicit model type if provided
+        if (modelType.has_value()) {
+            std::string type = modelType.value();
+            if (type == "transducer" && hasTransducer) {
+                LOGI("Using explicit Transducer model type");
+                config.model_config.transducer.encoder = encoderPath;
+                config.model_config.transducer.decoder = decoderPath;
+                config.model_config.transducer.joiner = joinerPath;
+                modelConfigured = true;
+            } else if (type == "paraformer" && !paraformerModelPath.empty()) {
+                LOGI("Using explicit Paraformer model type: %s", paraformerModelPath.c_str());
+                config.model_config.paraformer.model = paraformerModelPath;
+                modelConfigured = true;
+            } else if (type == "nemo_ctc" && !ctcModelPath.empty()) {
+                LOGI("Using explicit NeMo CTC model type: %s", ctcModelPath.c_str());
+                config.model_config.nemo_ctc.model = ctcModelPath;
+                modelConfigured = true;
+            } else {
+                LOGE("Explicit model type '%s' specified but required files not found", type.c_str());
+                return false;
+            }
+        }
+        
+        // Auto-detect if no explicit type or auto was specified
+        if (!modelConfigured) {
+            if (hasTransducer) {
+                // Zipformer/Transducer model
+                LOGI("Auto-detected Transducer model: encoder=%s, decoder=%s, joiner=%s", 
+                     encoderPath.c_str(), decoderPath.c_str(), joinerPath.c_str());
+                config.model_config.transducer.encoder = encoderPath;
+                config.model_config.transducer.decoder = decoderPath;
+                config.model_config.transducer.joiner = joinerPath;
+                modelConfigured = true;
+            } else if (!ctcModelPath.empty() && isLikelyCtc) {
+                // NeMo CTC model (model.onnx exists and directory name suggests CTC)
+                LOGI("Auto-detected NeMo CTC model: %s (detected by directory name)", ctcModelPath.c_str());
+                config.model_config.nemo_ctc.model = ctcModelPath;
+                modelConfigured = true;
+            } else if (!paraformerModelPath.empty()) {
+                // Paraformer model (has model.onnx, and directory name doesn't suggest CTC)
+                LOGI("Auto-detected Paraformer model: %s", paraformerModelPath.c_str());
+                config.model_config.paraformer.model = paraformerModelPath;
+                modelConfigured = true;
+            } else if (!ctcModelPath.empty()) {
+                // Fallback: NeMo CTC model (model.onnx exists, but no Paraformer was detected)
+                LOGI("Auto-detected NeMo CTC model: %s (fallback detection)", ctcModelPath.c_str());
+                config.model_config.nemo_ctc.model = ctcModelPath;
+                modelConfigured = true;
+            }
+        }
+        
+        if (!modelConfigured) {
             LOGE("No valid model files found in directory: %s", modelDir.c_str());
             LOGE("Checked paths:");
             LOGE("  Paraformer (int8): %s (exists: %s)", paraformerPathInt8.c_str(), fileExists(paraformerPathInt8) ? "yes" : "no");
             LOGE("  Paraformer: %s (exists: %s)", paraformerPath.c_str(), fileExists(paraformerPath) ? "yes" : "no");
+            LOGE("  CTC (int8): %s (exists: %s)", ctcPathInt8.c_str(), fileExists(ctcPathInt8) ? "yes" : "no");
+            LOGE("  CTC: %s (exists: %s)", ctcPath.c_str(), fileExists(ctcPath) ? "yes" : "no");
             LOGE("  Encoder: %s (exists: %s)", encoderPath.c_str(), fileExists(encoderPath) ? "yes" : "no");
             LOGE("  Decoder: %s (exists: %s)", decoderPath.c_str(), fileExists(decoderPath) ? "yes" : "no");
             LOGE("  Joiner: %s (exists: %s)", joinerPath.c_str(), fileExists(joinerPath) ? "yes" : "no");
-            LOGE("Expected either paraformer model (model.onnx or model.int8.onnx) or transducer model (encoder.onnx, decoder.onnx, joiner.onnx)");
+            LOGE("Expected transducer model (encoder.onnx, decoder.onnx, joiner.onnx), paraformer model (model.onnx or model.int8.onnx), or CTC model (model.onnx or model.int8.onnx)");
             return false;
         }
 

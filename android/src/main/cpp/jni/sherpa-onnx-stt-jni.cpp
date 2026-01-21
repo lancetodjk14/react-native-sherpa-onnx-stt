@@ -27,7 +27,8 @@ Java_com_sherpaonnxstt_SherpaOnnxSttModule_nativeInitialize(
     jobject /* this */,
     jstring modelDir,
     jboolean preferInt8,
-    jboolean hasPreferInt8) {
+    jboolean hasPreferInt8,
+    jstring modelType) {
     try {
         if (g_wrapper == nullptr) {
             g_wrapper = std::make_unique<SherpaOnnxWrapper>();
@@ -39,15 +40,31 @@ Java_com_sherpaonnxstt_SherpaOnnxSttModule_nativeInitialize(
             return JNI_FALSE;
         }
 
+        const char *modelTypeStr = env->GetStringUTFChars(modelType, nullptr);
+        if (modelTypeStr == nullptr) {
+            LOGE("Failed to get modelType string from JNI");
+            env->ReleaseStringUTFChars(modelDir, modelDirStr);
+            return JNI_FALSE;
+        }
+
         std::string modelDirPath(modelDirStr);
+        std::string modelTypePath(modelTypeStr);
+        
         // Convert Java boolean to C++ optional<bool>
         std::optional<bool> preferInt8Opt;
         if (hasPreferInt8 == JNI_TRUE) {
             preferInt8Opt = (preferInt8 == JNI_TRUE);
         }
         
-        bool result = g_wrapper->initialize(modelDirPath, preferInt8Opt);
+        // Convert model type string to optional
+        std::optional<std::string> modelTypeOpt;
+        if (modelTypePath != "auto" && !modelTypePath.empty()) {
+            modelTypeOpt = modelTypePath;
+        }
+        
+        bool result = g_wrapper->initialize(modelDirPath, preferInt8Opt, modelTypeOpt);
         env->ReleaseStringUTFChars(modelDir, modelDirStr);
+        env->ReleaseStringUTFChars(modelType, modelTypeStr);
 
         if (!result) {
             LOGE("Native initialization failed for: %s", modelDirPath.c_str());

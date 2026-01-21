@@ -4,10 +4,13 @@ pre-commit:
     lint:
       glob: '*.{js,ts,jsx,tsx}'
       run: npx eslint {staged_files}
+      exclude: 'sherpa-onnx/**'
 
     types:
-      glob: '*.{js,ts, jsx, tsx}'
+      glob: '*.{js,ts,jsx,tsx}'
       run: npx tsc
+      exclude: 'sherpa-onnx/**'
+
 commit-msg:
   parallel: true
   commands:

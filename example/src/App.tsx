@@ -68,7 +68,9 @@ export default function App() {
       const modelName =
         modelId === MODELS.ZIPFORMER_EN
           ? 'English (Zipformer)'
-          : 'Chinese (Paraformer)';
+          : modelId === MODELS.PARAFORMER_ZH
+          ? 'Chinese (Paraformer)'
+          : 'English (NeMo CTC)';
 
       setCurrentModel(modelId);
       setInitResult(`Initialized: ${modelName}`);
@@ -197,7 +199,10 @@ export default function App() {
             <View style={styles.currentModelContainer}>
               <Text style={styles.currentModelText}>
                 Current:{' '}
-                {currentModel === MODELS.ZIPFORMER_EN ? 'English' : 'Chinese'}
+                {currentModel === MODELS.ZIPFORMER_EN ||
+                currentModel === MODELS.NEMO_CTC_EN
+                  ? 'English'
+                  : 'Chinese'}
               </Text>
             </View>
           )}
@@ -242,6 +247,26 @@ export default function App() {
                 ]}
               >
                 中文 (Paraformer)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.modelButton,
+                currentModel === MODELS.NEMO_CTC_EN && styles.modelButtonActive,
+                loading && styles.buttonDisabled,
+              ]}
+              onPress={() => handleInitialize(MODELS.NEMO_CTC_EN)}
+              disabled={loading}
+            >
+              <Text
+                style={[
+                  styles.modelButtonText,
+                  currentModel === MODELS.NEMO_CTC_EN &&
+                    styles.modelButtonTextActive,
+                ]}
+              >
+                English (NeMo CTC)
               </Text>
             </TouchableOpacity>
           </View>

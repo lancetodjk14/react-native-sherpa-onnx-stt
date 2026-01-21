@@ -79,18 +79,21 @@ export const AUDIO_FILES: AudioFileInfo[] = [
  * Get audio files compatible with the given model
  * - Zipformer: English files only
  * - Paraformer: All files (English and Chinese) - supports both languages
+ * - NeMo CTC: English files only
  */
 export function getAudioFilesForModel(modelId: string): AudioFileInfo[] {
   const isParaformer = modelId.includes('paraformer');
-  const isZipformer = modelId.includes('zipformer') || modelId.includes('en');
+  const isZipformer = modelId.includes('zipformer');
+  const isNemoCtc = modelId.includes('nemo') || modelId.includes('ctc');
+  const isEnglish = modelId.includes('en') && !isParaformer;
 
   // Paraformer supports both English and Chinese
   if (isParaformer) {
     return AUDIO_FILES;
   }
 
-  // Zipformer supports only English
-  if (isZipformer) {
+  // Zipformer and NeMo CTC support only English
+  if (isZipformer || isNemoCtc || isEnglish) {
     return AUDIO_FILES.filter((file) => file.language === 'en');
   }
 
