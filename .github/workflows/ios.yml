@@ -103,15 +103,25 @@ jobs:
           
           PODS_XCCONFIG="example/ios/Pods/Target Support Files/SherpaOnnxStt/SherpaOnnxStt.debug.xcconfig"
           if [ -f "$PODS_XCCONFIG" ]; then
-            echo "Contents of SherpaOnnxStt.debug.xcconfig:"
+            echo "=== Contents of SherpaOnnxStt.debug.xcconfig ==="
             cat "$PODS_XCCONFIG"
             echo ""
+            echo "=== End of xcconfig ==="
+            echo ""
+            
+            # Check for HEADER_SEARCH_PATHS
+            if grep -q "HEADER_SEARCH_PATHS" "$PODS_XCCONFIG"; then
+              echo "[OK] HEADER_SEARCH_PATHS found in xcconfig"
+              grep "HEADER_SEARCH_PATHS" "$PODS_XCCONFIG"
+            else
+              echo "[ERROR] HEADER_SEARCH_PATHS not found in xcconfig!"
+            fi
             
             # Check for our conditional settings
             if grep -q "SHERPA_ONNX_LIB_DIR" "$PODS_XCCONFIG"; then
               echo "[OK] SHERPA_ONNX_LIB_DIR found in xcconfig"
             else
-              echo "[WARNING] SHERPA_ONNX_LIB_DIR not found - checking if conditional settings are supported"
+              echo "[WARNING] SHERPA_ONNX_LIB_DIR not found"
             fi
             
             if grep -q "force_load" "$PODS_XCCONFIG"; then
@@ -120,9 +130,35 @@ jobs:
               echo "[WARNING] force_load not found in xcconfig"
             fi
           else
-            echo "Warning: Could not find xcconfig file at: $PODS_XCCONFIG"
+            echo "Error: Could not find xcconfig file at: $PODS_XCCONFIG"
             echo "Available files in Target Support Files:"
             ls -la "example/ios/Pods/Target Support Files/" || true
+          fi
+          
+          echo ""
+          echo "=== Checking PODS_TARGET_SRCROOT resolution ==="
+          # Find the PODS_TARGET_SRCROOT in Pods.xcodeproj
+          PODS_PROJECT="example/ios/Pods/Pods.xcodeproj/project.pbxproj"
+          if [ -f "$PODS_PROJECT" ]; then
+            echo "Looking for SherpaOnnxStt PODS_TARGET_SRCROOT in Pods project..."
+            grep -A 2 "PODS_TARGET_SRCROOT.*SherpaOnnxStt" "$PODS_PROJECT" | head -10 || echo "Not found directly"
+            grep "SherpaOnnxStt" "$PODS_PROJECT" | grep -i "srcroot\|path" | head -5 || true
+          fi
+          
+          echo ""
+          echo "=== Verifying header file locations ==="
+          echo "Headers should be at: ios/include/sherpa-onnx/c-api/"
+          ls -la ios/include/sherpa-onnx/c-api/ || echo "Directory not found!"
+          
+          echo ""
+          echo "Full header path for compiler:"
+          FULL_PATH=$(pwd)/ios/include
+          echo "Expected HEADER_SEARCH_PATHS base: $FULL_PATH"
+          echo "Looking for: sherpa-onnx/c-api/cxx-api.h"
+          if [ -f "$FULL_PATH/sherpa-onnx/c-api/cxx-api.h" ]; then
+            echo "[OK] Header file exists at: $FULL_PATH/sherpa-onnx/c-api/cxx-api.h"
+          else
+            echo "[ERROR] Header file NOT found at: $FULL_PATH/sherpa-onnx/c-api/cxx-api.h"
           fi
 
       - name: Build example for iOS
