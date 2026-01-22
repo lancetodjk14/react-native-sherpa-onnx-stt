@@ -34,7 +34,10 @@ target 'SherpaOnnxSttExample' do
     )
     
     # Debug: Find paths for sherpa_onnx XCFramework and SherpaOnnxStt pod
-    Pod::UI.puts "\n[DEBUG] Searching for sherpa_onnx XCFramework and SherpaOnnxStt pod paths...".yellow
+    puts "\n[DEBUG] ========================================"
+    puts "[DEBUG] Searching for sherpa_onnx XCFramework and SherpaOnnxStt pod paths..."
+    STDERR.puts "\n[DEBUG] ========================================"
+    STDERR.puts "[DEBUG] Searching for sherpa_onnx XCFramework and SherpaOnnxStt pod paths..."
     
     # Find SherpaOnnxStt pod installation path
     sherpa_pod_path = nil
@@ -42,16 +45,19 @@ target 'SherpaOnnxSttExample' do
     if pod_spec
       # Use sandbox to get pod directory
       sherpa_pod_path = installer.sandbox.pod_dir('SherpaOnnxStt').to_s
-      Pod::UI.puts "[DEBUG] SherpaOnnxStt pod path: #{sherpa_pod_path}".green
+      puts "[DEBUG] SherpaOnnxStt pod path: #{sherpa_pod_path}"
+      STDERR.puts "[DEBUG] SherpaOnnxStt pod path: #{sherpa_pod_path}"
       
       # Get PODS_TARGET_SRCROOT relative path
       pods_root = Pod::Config.instance.installation_root
       if File.exist?(sherpa_pod_path)
         relative_path = Pathname.new(sherpa_pod_path).relative_path_from(Pathname.new(pods_root)).to_s
-        Pod::UI.puts "[DEBUG] PODS_TARGET_SRCROOT would be: #{relative_path}".green
+        puts "[DEBUG] PODS_TARGET_SRCROOT would be: #{relative_path}"
+        STDERR.puts "[DEBUG] PODS_TARGET_SRCROOT would be: #{relative_path}"
       end
     else
-      Pod::UI.puts "[DEBUG] SherpaOnnxStt pod target not found".red
+      puts "[DEBUG] SherpaOnnxStt pod target not found"
+      STDERR.puts "[DEBUG] SherpaOnnxStt pod target not found"
     end
     
     # Search for XCFramework in various possible locations
@@ -72,25 +78,32 @@ target 'SherpaOnnxSttExample' do
     example_root = File.dirname(__dir__)
     possible_framework_paths << File.join(example_root, '..', 'ios', 'Frameworks', 'sherpa_onnx.xcframework')
     
-    Pod::UI.puts "[DEBUG] Checking possible XCFramework paths:".yellow
+    puts "[DEBUG] Checking possible XCFramework paths:"
+    STDERR.puts "[DEBUG] Checking possible XCFramework paths:"
     framework_found_path = nil
     possible_framework_paths.each do |path|
       expanded_path = File.expand_path(path)
       exists = File.exist?(expanded_path)
-      status = exists ? "✓ EXISTS" : "✗ NOT FOUND"
-      Pod::UI.puts "  #{status}: #{expanded_path}"
+      status = exists ? "EXISTS" : "NOT FOUND"
+      puts "  [#{status}]: #{expanded_path}"
+      STDERR.puts "  [#{status}]: #{expanded_path}"
       framework_found_path = expanded_path if exists && framework_found_path.nil?
     end
     
     if framework_found_path
-      Pod::UI.puts "[DEBUG] ✓ XCFramework found at: #{framework_found_path}".green
+      puts "[DEBUG] XCFramework found at: #{framework_found_path}"
+      STDERR.puts "[DEBUG] XCFramework found at: #{framework_found_path}"
     else
-      Pod::UI.puts "[DEBUG] ✗ XCFramework not found in any checked location".red
+      puts "[DEBUG] XCFramework not found in any checked location"
+      STDERR.puts "[DEBUG] XCFramework not found in any checked location"
     end
     
-    Pod::UI.puts "[DEBUG] Pods installation root: #{pods_root}".yellow
-    Pod::UI.puts "[DEBUG] Example root: #{example_root}".yellow
-    Pod::UI.puts ""
+    puts "[DEBUG] Pods installation root: #{pods_root}"
+    puts "[DEBUG] Example root: #{example_root}"
+    STDERR.puts "[DEBUG] Pods installation root: #{pods_root}"
+    STDERR.puts "[DEBUG] Example root: #{example_root}"
+    puts "[DEBUG] ========================================\n"
+    STDERR.puts "[DEBUG] ========================================\n"
     
     # Ensure sherpa_onnx XCFramework is properly linked
     # This is necessary because static libraries in XCFrameworks may not be auto-linked by CocoaPods
