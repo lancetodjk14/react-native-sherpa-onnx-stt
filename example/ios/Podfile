@@ -110,15 +110,27 @@ target 'SherpaOnnxSttExample' do
     installer.pods_project.targets.each do |target|
       if target.name == 'SherpaOnnxStt'
         target.build_configurations.each do |config|
-          # Add framework search path (relative to Pods project root)
+          # Based on debug output:
+          # - PODS_TARGET_SRCROOT is ../.. (relative to Pods root at example/ios)
+          # - Framework is at ios/Frameworks/sherpa_onnx.xcframework relative to root
+          # - So the path should be $(PODS_TARGET_SRCROOT)/ios/Frameworks
+          
+          # Add framework search path
           framework_search_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS'] || ['$(inherited)']
-          framework_search_paths << '"$(PODS_TARGET_SRCROOT)/../../ios/Frameworks"'
+          framework_search_paths << '"$(PODS_TARGET_SRCROOT)/ios/Frameworks"'
           config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_search_paths.uniq
           
+          puts "[DEBUG] Added FRAMEWORK_SEARCH_PATHS: $(PODS_TARGET_SRCROOT)/ios/Frameworks"
+          STDERR.puts "[DEBUG] Added FRAMEWORK_SEARCH_PATHS: $(PODS_TARGET_SRCROOT)/ios/Frameworks"
+          
           # Force link the framework to ensure all symbols are included
+          # For static libraries in XCFrameworks, we need to explicitly link
           other_ldflags = config.build_settings['OTHER_LDFLAGS'] || ['$(inherited)']
           other_ldflags << '-framework sherpa_onnx'
           config.build_settings['OTHER_LDFLAGS'] = other_ldflags.uniq
+          
+          puts "[DEBUG] Added OTHER_LDFLAGS: -framework sherpa_onnx"
+          STDERR.puts "[DEBUG] Added OTHER_LDFLAGS: -framework sherpa_onnx"
         end
       end
     end
