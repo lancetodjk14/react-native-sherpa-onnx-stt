@@ -117,37 +117,6 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
-      - name: Check available iOS Simulator runtimes
-        id: ios-runtime
-        run: |
-          echo "Checking installed iOS Simulator runtimes..."
-          
-          # List installed runtimes (these are actually available)
-          echo "Installed iOS runtimes:"
-          xcrun simctl list runtimes installed | grep -i "iOS" || echo "No iOS runtimes found via simctl"
-          
-          echo ""
-          echo "Available iOS runtimes (downloadable):"
-          xcrun simctl list runtimes available | grep -i "iOS" || echo "No additional iOS runtimes available"
-          
-          echo ""
-          echo "Checking Xcode SDKs..."
-          xcodebuild -showsdks | grep -i "iphonesimulator" || echo "No iOS Simulator SDKs found"
-          
-          # Find installed iOS runtime version (prefer installed over available)
-          # According to GitHub Actions docs, iOS 18.5 is installed on macos-15
-          INSTALLED_IOS_VERSION=$(xcrun simctl list runtimes installed | grep -i "iOS" | grep -oE "[0-9]+\.[0-9]+" | sort -V | head -1)
-          
-          if [ -z "$INSTALLED_IOS_VERSION" ]; then
-            # Fallback: use iOS 18.5 which is documented as installed on macos-15
-            echo "Could not detect installed runtime, using iOS 18.5 (documented as installed on macos-15)"
-            INSTALLED_IOS_VERSION="18.5"
-          fi
-          
-          echo ""
-          echo "Using iOS version: $INSTALLED_IOS_VERSION (installed simulator runtime)"
-          echo "ios_version=$INSTALLED_IOS_VERSION" >> $GITHUB_OUTPUT
-
       - name: Install CocoaPods dependencies
         if: steps.cocoapods-cache.outputs.cache-hit != 'true'
         run: |
