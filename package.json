@@ -15,6 +15,8 @@
   "files": [
     "src",
     "lib",
+    "android/src/main/cpp/include/**",
+    "ios/include/**",
     "android",
     "ios",
     "*.podspec",
@@ -27,19 +29,20 @@
     "!android/gradlew.bat",
     "!android/local.properties",
     "!android/.cxx",
-    "!sherpa-onnx",
     "!**/__tests__",
     "!**/__fixtures__",
     "!**/__mocks__",
     "!**/.*",
-    "!**/sherpa-onnx",
-    "!**/harmony-os"
+    "!./sherpa-onnx",
+    "!./sherpa-onnx/**"
   ],
   "scripts": {
     "example": "yarn workspace react-native-sherpa-onnx-stt-example",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
     "copy-headers": "node scripts/copy-headers.js",
     "prepare": "yarn copy-headers && bob build",
+    "prepack": "yarn copy-headers",
+    "prepublishOnly": "yarn copy-headers",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "test": "jest",

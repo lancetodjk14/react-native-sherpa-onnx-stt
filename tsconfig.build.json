@@ -4,7 +4,6 @@
     "example",
     "lib",
     "sherpa-onnx/**",
-    "**/sherpa-onnx/**",
     "android/**/harmony-os/**"
   ]
 }
