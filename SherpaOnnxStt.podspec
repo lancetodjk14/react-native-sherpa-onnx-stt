@@ -19,17 +19,6 @@ Pod::Spec.new do |s|
   # Include sherpa-onnx headers
   s.public_header_files = "ios/include/**/*.h"
   
-  # C++ standard and header search paths - set for both pod and user targets to ensure C++17 features are available
-  s.pod_target_xcconfig = {
-    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
-    'CLANG_CXX_LIBRARY' => 'libc++',
-    'HEADER_SEARCH_PATHS' => '$(inherited) "$(PODS_TARGET_SRCROOT)/ios/include"'
-  }
-  s.user_target_xcconfig = {
-    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
-    'CLANG_CXX_LIBRARY' => 'libc++'
-  }
-  
   # Link with required frameworks
   s.frameworks = 'Foundation'
   s.libraries = 'c++'
@@ -37,6 +26,14 @@ Pod::Spec.new do |s|
   # sherpa-onnx framework integration
   # Automatically use pre-built XCFramework if available (bundled in npm package)
   framework_path = File.join(__dir__, 'ios', 'Frameworks', 'sherpa_onnx.xcframework')
+  
+  # Build pod_target_xcconfig hash with framework-specific settings if framework exists
+  pod_target_xcconfig_hash = {
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
+    'CLANG_CXX_LIBRARY' => 'libc++',
+    'HEADER_SEARCH_PATHS' => '$(inherited) "$(PODS_TARGET_SRCROOT)/ios/include"'
+  }
+  
   if File.exist?(framework_path)
     s.vendored_frameworks = 'ios/Frameworks/sherpa_onnx.xcframework'
     s.preserve_paths = 'ios/Frameworks/sherpa_onnx.xcframework/**/*'
@@ -44,10 +41,10 @@ Pod::Spec.new do |s|
     # The XCFramework contains a static library (libsherpa-onnx.a)
     # CocoaPods sometimes has issues linking static libraries in XCFrameworks
     # Ensure framework search paths are set correctly
-    s.pod_target_xcconfig['FRAMEWORK_SEARCH_PATHS'] = '$(inherited) "$(PODS_TARGET_SRCROOT)/ios/Frameworks"'
+    pod_target_xcconfig_hash['FRAMEWORK_SEARCH_PATHS'] = '$(inherited) "$(PODS_TARGET_SRCROOT)/ios/Frameworks"'
     # Force load the static library to ensure all symbols are included
     # This is necessary because static libraries in XCFrameworks may not be auto-linked
-    s.pod_target_xcconfig['OTHER_LDFLAGS'] = '$(inherited) -framework sherpa_onnx'
+    pod_target_xcconfig_hash['OTHER_LDFLAGS'] = '$(inherited) -framework sherpa_onnx'
   else
     # If framework is not found, fail fast with a clear error message
     raise <<~MSG
@@ -64,6 +61,13 @@ Pod::Spec.new do |s|
       define a `post_install` hook in your consuming app's Podfile instead of the podspec.
     MSG
   end
+  
+  # Set pod_target_xcconfig with all accumulated settings
+  s.pod_target_xcconfig = pod_target_xcconfig_hash
+  s.user_target_xcconfig = {
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
+    'CLANG_CXX_LIBRARY' => 'libc++'
+  }
 
   install_modules_dependencies(s)
 end
