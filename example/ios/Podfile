@@ -123,14 +123,43 @@ target 'SherpaOnnxSttExample' do
           puts "[DEBUG] Added FRAMEWORK_SEARCH_PATHS: $(PODS_TARGET_SRCROOT)/ios/Frameworks"
           STDERR.puts "[DEBUG] Added FRAMEWORK_SEARCH_PATHS: $(PODS_TARGET_SRCROOT)/ios/Frameworks"
           
-          # Force link the framework to ensure all symbols are included
-          # For static libraries in XCFrameworks, we need to explicitly link
+          # Force link the static library from XCFramework
+          # For static libraries in XCFrameworks, we need to use -force_load with the .a file
+          # The XCFramework contains libsherpa-onnx.a in each architecture slice
+          # We need to link it explicitly since vendored_frameworks may not auto-link static libs
+          
+          # Try using -framework first (works if CocoaPods handles it)
           other_ldflags = config.build_settings['OTHER_LDFLAGS'] || ['$(inherited)']
           other_ldflags << '-framework sherpa_onnx'
+          
+          # Also add -force_load as fallback for static library linking
+          # This ensures all symbols are included even if -framework doesn't work
+          # The path will be resolved by Xcode based on FRAMEWORK_SEARCH_PATHS
+          framework_lib_path = '$(PODS_TARGET_SRCROOT)/ios/Frameworks/sherpa_onnx.xcframework/$(PLATFORM_NAME)/libsherpa-onnx.a'
+          other_ldflags << "-force_load \"#{framework_lib_path}\""
+          
           config.build_settings['OTHER_LDFLAGS'] = other_ldflags.uniq
           
-          puts "[DEBUG] Added OTHER_LDFLAGS: -framework sherpa_onnx"
-          STDERR.puts "[DEBUG] Added OTHER_LDFLAGS: -framework sherpa_onnx"
+          puts "[DEBUG] Added OTHER_LDFLAGS: -framework sherpa_onnx and -force_load"
+          STDERR.puts "[DEBUG] Added OTHER_LDFLAGS: -framework sherpa_onnx and -force_load"
+          puts "[DEBUG] Force load path: #{framework_lib_path}"
+          STDERR.puts "[DEBUG] Force load path: #{framework_lib_path}"
+        end
+      end
+    end
+    
+    # Also ensure the framework is linked in the app target
+    # This is necessary because static libraries need to be linked at the app level
+    installer.pods_project.targets.each do |target|
+      if target.name == 'Pods-SherpaOnnxSttExample'
+        target.build_configurations.each do |config|
+          # Add framework search path to app target as well
+          framework_search_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS'] || ['$(inherited)']
+          framework_search_paths << '"$(PODS_TARGET_SRCROOT)/../../ios/Frameworks"'
+          config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_search_paths.uniq
+          
+          puts "[DEBUG] Added FRAMEWORK_SEARCH_PATHS to app target: $(PODS_TARGET_SRCROOT)/../../ios/Frameworks"
+          STDERR.puts "[DEBUG] Added FRAMEWORK_SEARCH_PATHS to app target: $(PODS_TARGET_SRCROOT)/../../ios/Frameworks"
         end
       end
     end
