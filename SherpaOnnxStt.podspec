@@ -18,14 +18,12 @@ Pod::Spec.new do |s|
   
   # Include sherpa-onnx headers
   s.public_header_files = "ios/include/**/*.h"
-  s.header_search_paths = [
-    "$(PODS_TARGET_SRCROOT)/ios/include"
-  ]
   
-  # C++ standard - set for both pod and user targets to ensure C++17 features are available
+  # C++ standard and header search paths - set for both pod and user targets to ensure C++17 features are available
   s.pod_target_xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
-    'CLANG_CXX_LIBRARY' => 'libc++'
+    'CLANG_CXX_LIBRARY' => 'libc++',
+    'HEADER_SEARCH_PATHS' => '$(inherited) "$(PODS_TARGET_SRCROOT)/ios/include"'
   }
   s.user_target_xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
