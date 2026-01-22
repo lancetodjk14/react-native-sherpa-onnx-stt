@@ -223,6 +223,7 @@ target 'SherpaOnnxSttExample' do
         STDERR.puts "[DEBUG] Error modifying app target: #{e.message}"
         puts "[DEBUG] #{e.backtrace.first}"
         STDERR.puts "[DEBUG] #{e.backtrace.first}"
+      end
     else
       puts "[DEBUG] App project not found at: #{app_project_path}"
       STDERR.puts "[DEBUG] App project not found at: #{app_project_path}"
