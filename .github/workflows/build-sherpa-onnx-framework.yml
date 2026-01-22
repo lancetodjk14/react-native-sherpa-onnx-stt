@@ -209,11 +209,30 @@ jobs:
           path: ios/Frameworks/sherpa_onnx.xcframework.zip
           retention-days: 90
 
+      - name: Install Git LFS
+        if: github.event.inputs.commit_to_repo != 'false'
+        run: |
+          # Install Git LFS via Homebrew (macOS runner)
+          brew install git-lfs
+          
+          # Initialize Git LFS
+          git lfs install
+          
+          # Verify Git LFS is working
+          git lfs version
+
       - name: Commit framework to repository
         if: github.event.inputs.commit_to_repo != 'false'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          
+          # Ensure .gitattributes is up to date for LFS
+          git add .gitattributes
+          
+          # Track .a files with Git LFS
+          git lfs track "ios/Frameworks/**/*.a"
+          git add .gitattributes
           
           # Remove .gitkeep if framework exists
           if [ -d "ios/Frameworks/sherpa_onnx.xcframework" ]; then
@@ -227,8 +246,13 @@ jobs:
           fi
           
           # Only add the framework (ZIP is ignored by .gitignore and not needed in repo)
+          # Git LFS will automatically handle the .a files
           git add ios/Frameworks/sherpa_onnx.xcframework
           git add ios/Frameworks/.gitkeep 2>/dev/null || true
+          
+          # Verify files are tracked by LFS
+          echo "Checking Git LFS tracking:"
+          git lfs ls-files | grep -E "\.a$" | head -5 || echo "No .a files tracked yet (will be tracked after commit)"
           
           # Check if there are staged changes
           if git diff --cached --quiet; then
@@ -240,6 +264,9 @@ jobs:
           
           # Configure git to use the token for pushing
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          
+          # Push LFS objects first, then the commit
+          git lfs push origin HEAD:${{ github.ref_name }} || echo "No LFS objects to push (may already be pushed)"
           
           # Push to current branch
           git push origin HEAD:${{ github.ref_name }}
