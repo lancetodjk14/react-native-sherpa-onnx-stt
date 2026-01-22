@@ -2,6 +2,10 @@
 
 Offline Speech-to-Text with sherpa-onnx for React Native
 
+[![npm version](https://img.shields.io/npm/v/react-native-sherpa-onnx-stt.svg)](https://www.npmjs.com/package/react-native-sherpa-onnx-stt)
+[![npm downloads](https://img.shields.io/npm/dm/react-native-sherpa-onnx-stt.svg)](https://www.npmjs.com/package/react-native-sherpa-onnx-stt)
+[![npm license](https://img.shields.io/npm/l/react-native-sherpa-onnx-stt.svg)](https://www.npmjs.com/package/react-native-sherpa-onnx-stt)
+
 A React Native TurboModule that provides offline speech recognition capabilities using [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx). Supports multiple model architectures including Zipformer/Transducer, Paraformer, NeMo CTC, and Whisper.
 
 ## Platform Support
