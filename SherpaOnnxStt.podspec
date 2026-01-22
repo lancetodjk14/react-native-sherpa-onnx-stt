@@ -15,6 +15,12 @@ Pod::Spec.new do |s|
 
   s.source_files = "ios/**/*.{h,m,mm,swift,cpp}"
   s.private_header_files = "ios/**/*.h"
+  
+  # Include sherpa-onnx headers for iOS (when iOS support is implemented)
+  s.public_header_files = "ios/include/**/*.h"
+  s.header_search_paths = [
+    "$(PODS_TARGET_SRCROOT)/ios/include"
+  ]
 
   install_modules_dependencies(s)
 end

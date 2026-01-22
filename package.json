@@ -19,6 +19,7 @@
     "ios",
     "*.podspec",
     "react-native.config.js",
+    "scripts/copy-headers.js",
     "!ios/build",
     "!android/build",
     "!android/gradle",
@@ -37,7 +38,8 @@
   "scripts": {
     "example": "yarn workspace react-native-sherpa-onnx-stt-example",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
-    "prepare": "bob build",
+    "copy-headers": "node scripts/copy-headers.js",
+    "prepare": "yarn copy-headers && bob build",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "test": "jest",
