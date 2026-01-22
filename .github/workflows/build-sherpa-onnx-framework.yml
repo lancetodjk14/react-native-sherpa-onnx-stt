@@ -1,6 +1,7 @@
 name: Build sherpa-onnx XCFramework
 
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       sherpa_onnx_version:
