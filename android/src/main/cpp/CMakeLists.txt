@@ -56,25 +56,43 @@ add_library(sherpaonnxstt SHARED
 )
 
 # Try to find sherpa-onnx headers
-# Check common locations: git submodule
-# The headers use "sherpa-onnx/csrc/..." includes, so we need to add
+# Priority order:
+# 1. Local include directory (bundled in npm package) - preferred for published packages
+# 2. Git submodule (for local development)
+# The headers use "sherpa-onnx/c-api/..." includes, so we need to add
 # the directory that contains "sherpa-onnx" as a subdirectory
 set(SHERPA_ONNX_INCLUDE_DIRS "")
 set(POSSIBLE_BASE_PATHS
-    "${PROJECT_ROOT}/sherpa-onnx"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../sherpa-onnx"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"  # Bundled headers in npm package
+    "${PROJECT_ROOT}/android/src/main/cpp/include"  # Alternative path for bundled headers
+    "${PROJECT_ROOT}/sherpa-onnx"  # Git submodule (for local development)
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../sherpa-onnx"  # Alternative submodule path
 )
 
+set(HEADER_SOURCE_TYPE "")
 foreach(BASE_PATH ${POSSIBLE_BASE_PATHS})
     if(EXISTS "${BASE_PATH}/sherpa-onnx/c-api/cxx-api.h")
         list(APPEND SHERPA_ONNX_INCLUDE_DIRS "${BASE_PATH}")
-        message(STATUS "Found sherpa-onnx headers, adding include directory: ${BASE_PATH}")
+        
+        # Determine header source type for logging
+        if("${BASE_PATH}" MATCHES "include")
+            set(HEADER_SOURCE_TYPE "bundled (npm package)")
+        else()
+            set(HEADER_SOURCE_TYPE "git submodule")
+        endif()
+        
+        message(STATUS "Found sherpa-onnx headers from ${HEADER_SOURCE_TYPE} at: ${BASE_PATH}")
+        # Also output as regular message to ensure visibility in Gradle logs
+        message("-- Using sherpa-onnx headers from: ${HEADER_SOURCE_TYPE}")
         break()  # Found it, no need to check other paths
     endif()
 endforeach()
 
 if(SHERPA_ONNX_INCLUDE_DIRS STREQUAL "")
-    message(WARNING "sherpa-onnx headers not found. Please ensure sherpa-onnx git submodule is initialized.")
+    message(FATAL_ERROR "sherpa-onnx headers not found.\n"
+                        "Please ensure:\n"
+                        "  1. Headers are copied by running: yarn copy-headers\n"
+                        "  2. Or git submodule is initialized: git submodule update --init --recursive")
 endif()
 
 # Include directories (must be after add_library)

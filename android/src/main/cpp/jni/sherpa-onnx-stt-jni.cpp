@@ -108,7 +108,7 @@ Java_com_sherpaonnxstt_SherpaOnnxSttModule_nativeTranscribeFile(
 
 JNIEXPORT void JNICALL
 Java_com_sherpaonnxstt_SherpaOnnxSttModule_nativeRelease(
-    JNIEnv *env,
+    JNIEnv * /* env */,
     jobject /* this */) {
     try {
         if (g_wrapper != nullptr) {
