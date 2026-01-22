@@ -27,6 +27,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 1
+          persist-credentials: true
 
       - name: Use appropriate Xcode version
         uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
@@ -50,7 +51,7 @@ jobs:
           cd sherpa-onnx-source
           chmod +x build-ios.sh
           
-          echo "🔨 Building sherpa-onnx XCFramework (this may take several minutes)..."
+          echo "Building sherpa-onnx XCFramework (this may take several minutes)..."
           
           # Accept Xcode license if needed
           sudo xcodebuild -license accept > /dev/null 2>&1 || true
@@ -154,9 +155,9 @@ jobs:
             exit 0
           fi
           
+          # Only add the framework (ZIP is ignored by .gitignore and not needed in repo)
           git add ios/Frameworks/sherpa_onnx.xcframework
-          git add ios/Frameworks/sherpa_onnx.xcframework.zip || true
-          git add ios/Frameworks/.gitkeep || true
+          git add ios/Frameworks/.gitkeep 2>/dev/null || true
           
           # Check if there are staged changes
           if git diff --cached --quiet; then
@@ -165,6 +166,9 @@ jobs:
           fi
           
           git commit -m "chore: Update sherpa-onnx XCFramework to ${{ env.SHERPA_ONNX_VERSION }} [skip ci]"
+          
+          # Configure git to use the token for pushing
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           
           # Push to current branch
           git push origin HEAD:${{ github.ref_name }}
