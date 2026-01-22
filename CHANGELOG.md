@@ -46,10 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flexible model loading (asset models, file system models, auto-detection)
 - TypeScript definitions
 
-### Known Issues
-
-- iOS support not yet available (coming soon)
-
 [Unreleased]: https://github.com/XDcobra/react-native-sherpa-onnx-stt/compare/v0.1.1...HEAD
 [0.1.1]: https://github.com/XDcobra/react-native-sherpa-onnx-stt/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/XDcobra/react-native-sherpa-onnx-stt/compare/v0.0.2...v0.1.0
