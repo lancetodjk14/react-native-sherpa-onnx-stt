@@ -184,6 +184,8 @@
 static std::unique_ptr<sherpaonnxstt::SherpaOnnxWrapper> g_wrapper = nullptr;
 
 - (void)initializeSherpaOnnx:(NSString *)modelDir
+                preferInt8:(NSNumber *)preferInt8
+                 modelType:(NSString *)modelType
                 withResolver:(RCTPromiseResolveBlock)resolve
                 withRejecter:(RCTPromiseRejectBlock)reject
 {
@@ -195,8 +197,18 @@ static std::unique_ptr<sherpaonnxstt::SherpaOnnxWrapper> g_wrapper = nullptr;
         }
         
         std::string modelDirStr = [modelDir UTF8String];
+        
+        // Convert NSNumber to std::optional<bool>
         std::optional<bool> preferInt8Opt = std::nullopt;
+        if (preferInt8 != nil) {
+            preferInt8Opt = [preferInt8 boolValue];
+        }
+        
+        // Convert NSString to std::optional<std::string>
         std::optional<std::string> modelTypeOpt = std::nullopt;
+        if (modelType != nil && [modelType length] > 0) {
+            modelTypeOpt = [modelType UTF8String];
+        }
         
         bool result = g_wrapper->initialize(modelDirStr, preferInt8Opt, modelTypeOpt);
         
@@ -240,14 +252,13 @@ static std::unique_ptr<sherpaonnxstt::SherpaOnnxWrapper> g_wrapper = nullptr;
         std::string filePathStr = [filePath UTF8String];
         std::string result = g_wrapper->transcribeFile(filePathStr);
         
-        if (result.empty()) {
-            NSString *errorMsg = [NSString stringWithFormat:@"Transcription failed or returned empty result for file: %@", filePath];
-            RCTLogError(@"%@", errorMsg);
-            reject(@"TRANSCRIBE_ERROR", errorMsg, nil);
-            return;
+        // Convert result to NSString - empty strings are valid (e.g., silence)
+        NSString *transcribedText = [NSString stringWithUTF8String:result.c_str()];
+        if (transcribedText == nil) {
+            // If conversion fails, treat as empty string
+            transcribedText = @"";
         }
         
-        NSString *transcribedText = [NSString stringWithUTF8String:result.c_str()];
         resolve(transcribedText);
     } @catch (NSException *exception) {
         NSString *errorMsg = [NSString stringWithFormat:@"Exception during transcription: %@", exception.reason];

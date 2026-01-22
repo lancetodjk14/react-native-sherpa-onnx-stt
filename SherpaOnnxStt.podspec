@@ -22,8 +22,12 @@ Pod::Spec.new do |s|
     "$(PODS_TARGET_SRCROOT)/ios/include"
   ]
   
-  # C++ standard
-  s.xcconfig = {
+  # C++ standard - set for both pod and user targets to ensure C++17 features are available
+  s.pod_target_xcconfig = {
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
+    'CLANG_CXX_LIBRARY' => 'libc++'
+  }
+  s.user_target_xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     'CLANG_CXX_LIBRARY' => 'libc++'
   }
@@ -39,21 +43,20 @@ Pod::Spec.new do |s|
     s.vendored_frameworks = 'ios/Frameworks/sherpa_onnx.xcframework'
     s.preserve_paths = 'ios/Frameworks/sherpa_onnx.xcframework/**/*'
   else
-    # If framework is not found, provide helpful error message
-    s.pod_target_xcconfig = {
-      'OTHER_LDFLAGS' => '-Wl,-framework,sherpa_onnx',
-      'HEADER_SEARCH_PATHS' => '$(inherited) "$(PODS_TARGET_SRCROOT)/ios/include"'
-    }
-    s.post_install do |installer|
-      installer.pods_project.targets.each do |target|
-        if target.name == 'SherpaOnnxStt'
-          target.build_configurations.each do |config|
-            config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
-            config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'SHERPA_ONNX_FRAMEWORK_NOT_FOUND=1'
-          end
-        end
-      end
-    end
+    # If framework is not found, fail fast with a clear error message
+    raise <<~MSG
+      SherpaOnnxStt: Required XCFramework 'ios/Frameworks/sherpa_onnx.xcframework' was not found.
+
+      Make sure the sherpa_onnx.xcframework is bundled with the npm package or added to:
+        #{File.join(__dir__, 'ios', 'Frameworks')}
+
+      You can obtain the framework by:
+      1. Downloading from GitHub Actions workflow artifacts
+      2. Building it yourself using the build-sherpa-onnx-framework.yml workflow
+
+      If you need to add custom build settings or post_install logic to handle this case,
+      define a `post_install` hook in your consuming app's Podfile instead of the podspec.
+    MSG
   end
 
   install_modules_dependencies(s)

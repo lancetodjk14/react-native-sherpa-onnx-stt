@@ -49,24 +49,22 @@ No additional setup required. The library automatically handles native dependenc
 
 ### iOS
 
-**No additional setup required!** The sherpa-onnx XCFramework is automatically included in the npm package. Simply install CocoaPods dependencies:
+The sherpa-onnx XCFramework is required but needs to be obtained separately. Simply install CocoaPods dependencies after obtaining the framework:
 
 ```sh
 cd ios
 pod install
 ```
 
-The framework will be automatically detected and linked by the Podspec.
+**Note:** The XCFramework is not bundled with the npm package due to its size. You must obtain it before running `pod install`.
 
-#### Manual Setup (Optional)
+#### Obtaining the XCFramework
 
-If you need to use a different version of sherpa-onnx or build it yourself:
-
-1. **Download from GitHub Actions** (if available):
+1. **Download from GitHub Actions**:
    - Go to the [Actions tab](https://github.com/XDcobra/react-native-sherpa-onnx-stt/actions)
    - Find the latest "Build sherpa-onnx XCFramework" workflow run
    - Download the `sherpa-onnx-xcframework-zip-*` artifact
-   - Extract to `ios/Frameworks/` in your project
+   - Extract to `node_modules/react-native-sherpa-onnx-stt/ios/Frameworks/` in your project
 
 2. **Build locally** (requires macOS):
    ```sh
