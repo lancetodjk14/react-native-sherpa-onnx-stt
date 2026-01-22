@@ -2,7 +2,6 @@
 #include <fstream>
 #include <sstream>
 #include <optional>
-#include <sys/stat.h>
 #include <algorithm>
 #include <cctype>
 
@@ -17,18 +16,9 @@
 #define LOGE(...)
 #endif
 
-// Use filesystem if available (C++17), otherwise fallback
-#if __cplusplus >= 201703L && __has_include(<filesystem>)
+// Use C++17 filesystem (podspec enforces C++17)
 #include <filesystem>
 namespace fs = std::filesystem;
-#elif __has_include(<experimental/filesystem>)
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#else
-// Fallback: use stat/opendir for older compilers
-#include <sys/stat.h>
-#include <dirent.h>
-#endif
 
 // sherpa-onnx headers - use cxx-api
 #include "sherpa-onnx/c-api/cxx-api.h"
@@ -69,26 +59,11 @@ bool SherpaOnnxWrapper::initialize(
     try {
         // Helper function to check if file exists
         auto fileExists = [](const std::string& path) -> bool {
-#if __cplusplus >= 201703L && __has_include(<filesystem>)
-            return std::filesystem::exists(path);
-#elif __has_include(<experimental/filesystem>)
-            return std::experimental::filesystem::exists(path);
-#else
-            struct stat buffer;
-            return (stat(path.c_str(), &buffer) == 0);
-#endif
+            return fs::exists(path);
         };
 
         auto isDirectory = [](const std::string& path) -> bool {
-#if __cplusplus >= 201703L && __has_include(<filesystem>)
-            return std::filesystem::is_directory(path);
-#elif __has_include(<experimental/filesystem>)
-            return std::experimental::filesystem::is_directory(path);
-#else
-            struct stat buffer;
-            if (stat(path.c_str(), &buffer) != 0) return false;
-            return S_ISDIR(buffer.st_mode);
-#endif
+            return fs::is_directory(path);
         };
 
         // Check if model directory exists
@@ -136,7 +111,8 @@ bool SherpaOnnxWrapper::initialize(
                     if (entry.is_directory()) {
                         std::string dirName = entry.path().filename().string();
                         std::string dirNameLower = dirName;
-                        std::transform(dirNameLower.begin(), dirNameLower.end(), dirNameLower.begin(), ::tolower);
+                        std::transform(dirNameLower.begin(), dirNameLower.end(), dirNameLower.begin(),
+                                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
                         if (dirNameLower.find("qwen3") != std::string::npos) {
                             std::string vocabPath = entry.path().string() + "/vocab.json";
                             if (fileExists(vocabPath)) {
@@ -415,18 +391,7 @@ std::string SherpaOnnxWrapper::transcribeFile(const std::string& filePath) {
     }
 
     try {
-        auto fileExists = [](const std::string& path) -> bool {
-#if __cplusplus >= 201703L && __has_include(<filesystem>)
-            return std::filesystem::exists(path);
-#elif __has_include(<experimental/filesystem>)
-            return std::experimental::filesystem::exists(path);
-#else
-            struct stat buffer;
-            return (stat(path.c_str(), &buffer) == 0);
-#endif
-        };
-
-        if (!fileExists(filePath)) {
+        if (!fs::exists(filePath)) {
             LOGE("Audio file does not exist: %s", filePath.c_str());
             return "";
         }
