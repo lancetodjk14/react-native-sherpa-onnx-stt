@@ -40,6 +40,14 @@ Pod::Spec.new do |s|
   if File.exist?(framework_path)
     s.vendored_frameworks = 'ios/Frameworks/sherpa_onnx.xcframework'
     s.preserve_paths = 'ios/Frameworks/sherpa_onnx.xcframework/**/*'
+    
+    # The XCFramework contains a static library (libsherpa-onnx.a)
+    # CocoaPods sometimes has issues linking static libraries in XCFrameworks
+    # Ensure framework search paths are set correctly
+    s.pod_target_xcconfig['FRAMEWORK_SEARCH_PATHS'] = '$(inherited) "$(PODS_TARGET_SRCROOT)/ios/Frameworks"'
+    # Force load the static library to ensure all symbols are included
+    # This is necessary because static libraries in XCFrameworks may not be auto-linked
+    s.pod_target_xcconfig['OTHER_LDFLAGS'] = '$(inherited) -framework sherpa_onnx'
   else
     # If framework is not found, fail fast with a clear error message
     raise <<~MSG
