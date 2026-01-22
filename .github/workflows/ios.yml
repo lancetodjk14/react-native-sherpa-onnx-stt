@@ -149,21 +149,19 @@ jobs:
             exit 1
           fi
           
-          # Verify workspace exists
-          # Note: If Pods came from cache, workspace might need to be regenerated
-          if [ ! -f "ios/SherpaOnnxSttExample.xcworkspace/contents.xcworkspacedata" ]; then
-            echo "Warning: Xcode workspace not found. This may happen if Pods were restored from cache."
-            echo "Installing bundle dependencies and regenerating workspace..."
-            bundle install
-            bundle exec pod install --project-directory=ios || {
-              echo "Error: Failed to regenerate workspace"
-              exit 1
-            }
-          fi
+          # Always run pod install to ensure post_install hook is executed
+          # This is critical because the post_install hook modifies build settings
+          # for linking the sherpa_onnx XCFramework, which is necessary even if Pods are cached
+          echo "Running pod install to ensure post_install hook is executed..."
+          bundle install
+          bundle exec pod install --project-directory=ios || {
+            echo "Error: Failed to run pod install"
+            exit 1
+          }
           
-          # Verify workspace exists after potential regeneration
+          # Verify workspace exists
           if [ ! -f "ios/SherpaOnnxSttExample.xcworkspace/contents.xcworkspacedata" ]; then
-            echo "Error: Xcode workspace still not found after regeneration."
+            echo "Error: Xcode workspace not found after pod install."
             exit 1
           fi
           

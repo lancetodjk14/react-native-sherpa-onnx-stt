@@ -163,5 +163,69 @@ target 'SherpaOnnxSttExample' do
         end
       end
     end
+    
+    # Also modify the actual app target (SherpaOnnxSttExample) in the Xcode project
+    # This is critical because the app target needs to link the framework
+    example_root = File.dirname(__dir__)
+    app_project_path = File.join(example_root, 'SherpaOnnxSttExample.xcodeproj')
+    
+    if File.exist?(app_project_path)
+      begin
+        require 'xcodeproj'
+        app_project = Xcodeproj::Project.open(app_project_path)
+      
+      app_project.targets.each do |target|
+        if target.name == 'SherpaOnnxSttExample'
+          puts "[DEBUG] Modifying app target: #{target.name}"
+          STDERR.puts "[DEBUG] Modifying app target: #{target.name}"
+          
+          target.build_configurations.each do |config|
+            # Add framework search path
+            framework_search_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS'] || ['$(inherited)']
+            # Path relative to app project root (example/ios)
+            framework_search_paths << '"$(SRCROOT)/../../ios/Frameworks"'
+            config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_search_paths.uniq
+            
+            puts "[DEBUG] Added FRAMEWORK_SEARCH_PATHS to app target: $(SRCROOT)/../../ios/Frameworks"
+            STDERR.puts "[DEBUG] Added FRAMEWORK_SEARCH_PATHS to app target: $(SRCROOT)/../../ios/Frameworks"
+            
+            # Add linker flags to link the static library
+            other_ldflags = config.build_settings['OTHER_LDFLAGS'] || ['$(inherited)']
+            other_ldflags << '-framework sherpa_onnx'
+            
+            # Force load the static library for the simulator architecture
+            # For x86_64 simulator: ios-arm64_x86_64-simulator
+            # For arm64 simulator: ios-arm64_x86_64-simulator
+            # For device: ios-arm64
+            framework_lib_path = '$(SRCROOT)/../../ios/Frameworks/sherpa_onnx.xcframework/$(PLATFORM_NAME)/libsherpa-onnx.a'
+            other_ldflags << "-force_load \"#{framework_lib_path}\""
+            
+            config.build_settings['OTHER_LDFLAGS'] = other_ldflags.uniq
+            
+            puts "[DEBUG] Added OTHER_LDFLAGS to app target: -framework sherpa_onnx and -force_load"
+            STDERR.puts "[DEBUG] Added OTHER_LDFLAGS to app target: -framework sherpa_onnx and -force_load"
+            puts "[DEBUG] Force load path: #{framework_lib_path}"
+            STDERR.puts "[DEBUG] Force load path: #{framework_lib_path}"
+          end
+          
+          app_project.save
+          puts "[DEBUG] Saved app project"
+          STDERR.puts "[DEBUG] Saved app project"
+        end
+      end
+      rescue LoadError => e
+        puts "[DEBUG] Could not load xcodeproj gem: #{e.message}"
+        STDERR.puts "[DEBUG] Could not load xcodeproj gem: #{e.message}"
+        puts "[DEBUG] Skipping app target modification"
+        STDERR.puts "[DEBUG] Skipping app target modification"
+      rescue => e
+        puts "[DEBUG] Error modifying app target: #{e.message}"
+        STDERR.puts "[DEBUG] Error modifying app target: #{e.message}"
+        puts "[DEBUG] #{e.backtrace.first}"
+        STDERR.puts "[DEBUG] #{e.backtrace.first}"
+    else
+      puts "[DEBUG] App project not found at: #{app_project_path}"
+      STDERR.puts "[DEBUG] App project not found at: #{app_project_path}"
+    end
   end
 end
