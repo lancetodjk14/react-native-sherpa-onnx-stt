@@ -153,7 +153,7 @@ jobs:
         run: |
           mkdir -p ios/Frameworks
           
-          # Determine framework name
+          # Determine framework name from build output
           if [ -d "sherpa-onnx-source/build-ios/sherpa-onnx.xcframework" ]; then
             SOURCE_FRAMEWORK="sherpa-onnx.xcframework"
             TARGET_FRAMEWORK="sherpa_onnx.xcframework"
@@ -162,10 +162,12 @@ jobs:
             TARGET_FRAMEWORK="sherpa_onnx.xcframework"
           else
             echo "Error: Framework not found in build directory"
+            echo "Contents of sherpa-onnx-source/build-ios/:"
+            ls -la sherpa-onnx-source/build-ios/ | head -20
             exit 1
           fi
           
-          # Copy and rename to consistent name (sherpa_onnx.xcframework)
+          # Copy framework to target location
           cp -R "sherpa-onnx-source/build-ios/$SOURCE_FRAMEWORK" "ios/Frameworks/$TARGET_FRAMEWORK"
           
           # Verify copy
@@ -174,8 +176,8 @@ jobs:
             exit 1
           fi
           
-          # Show size
-          du -sh ios/Frameworks/sherpa_onnx.xcframework
+          echo "Framework copied successfully to ios/Frameworks/$TARGET_FRAMEWORK"
+          du -sh ios/Frameworks/$TARGET_FRAMEWORK
 
       - name: Create version info file
         run: |
