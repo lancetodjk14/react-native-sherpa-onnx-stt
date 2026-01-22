@@ -80,6 +80,27 @@ For smaller models that can be bundled with your app:
      └── tokens.txt            (REQUIRED)
    ```
 
+   **For SenseVoice models:**
+
+   ```
+   android/app/src/main/assets/models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue/
+     ├── model.onnx            (or model.int8.onnx for quantized)
+     └── tokens.txt            (REQUIRED)
+   ```
+
+   **For FunASR Nano models:**
+
+   ```
+   android/app/src/main/assets/models/sherpa-onnx-funasr-nano-2025-12-30/
+     ├── encoder_adaptor.onnx  (or encoder_adaptor.int8.onnx for quantized)
+     ├── llm.onnx              (or llm.int8.onnx for quantized)
+     ├── embedding.onnx        (or embedding.int8.onnx for quantized)
+     └── Qwen3-0.6B/           (tokenizer directory)
+         ├── vocab.json        (REQUIRED)
+         ├── merges.txt         (REQUIRED)
+         └── tokenizer.json     (REQUIRED)
+   ```
+
    **Note:** The library automatically detects and prefers quantized `.int8.onnx` models when available. You can control this behavior with the `preferInt8` option (see Usage section).
 
 2. Model will be available at: `assets/models/sherpa-onnx-zipformer-small-en`
