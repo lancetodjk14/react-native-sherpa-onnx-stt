@@ -474,18 +474,20 @@ jobs:
           
           # Create IPA file (ZIP archive)
           IPA_NAME="SherpaOnnxSttExample.ipa"
-          cd "$IPA_DIR"
-          zip -r "../$IPA_NAME" Payload
-          cd - > /dev/null
+          IPA_PATH="$IPA_DIR/$IPA_NAME"
           
-          IPA_PATH="example/ios/build/ipa/$IPA_NAME"
+          cd "$IPA_DIR"
+          zip -r "$IPA_NAME" Payload
+          cd - > /dev/null
           
           if [ -f "$IPA_PATH" ]; then
             IPA_SIZE=$(stat -f%z "$IPA_PATH" 2>/dev/null || stat -c%s "$IPA_PATH")
             IPA_SIZE_MB=$((IPA_SIZE / 1024 / 1024))
             echo "[OK] IPA file created: $IPA_PATH (${IPA_SIZE_MB}MB)"
           else
-            echo "Error: IPA file was not created"
+            echo "Error: IPA file was not created at $IPA_PATH"
+            echo "Checking for IPA files in build directory:"
+            find example/ios/build -name "*.ipa" -type f || echo "No IPA files found"
             exit 1
           fi
 
