@@ -32,5 +32,12 @@ target 'SherpaOnnxSttExample' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    
+    # Note: We no longer need manual force_load configuration because
+    # vendored_frameworks in the podspec automatically handles linking
+    # the XCFramework. Manual force_load was causing duplicate symbol errors.
+    puts "\n[SherpaOnnxStt] ========================================"
+    puts "[SherpaOnnxStt] Using vendored_frameworks for automatic linking"
+    puts "[SherpaOnnxStt] ========================================"
   end
 end

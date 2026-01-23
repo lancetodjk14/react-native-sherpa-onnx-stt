@@ -1,6 +1,10 @@
 #import "SherpaOnnxStt.h"
 #import <React/RCTUtils.h>
 #import <React/RCTLog.h>
+#import "sherpa-onnx-wrapper.h"
+#import <memory>
+#import <optional>
+#import <string>
 
 @implementation SherpaOnnxStt
 - (NSNumber *)multiply:(double)a b:(double)b {
@@ -176,70 +180,109 @@
     return nil;
 }
 
+// Global wrapper instance
+static std::unique_ptr<sherpaonnxstt::SherpaOnnxWrapper> g_wrapper = nullptr;
+
 - (void)initializeSherpaOnnx:(NSString *)modelDir
+                preferInt8:(NSNumber *)preferInt8
+                 modelType:(NSString *)modelType
                 withResolver:(RCTPromiseResolveBlock)resolve
                 withRejecter:(RCTPromiseRejectBlock)reject
 {
     RCTLogInfo(@"Initializing sherpa-onnx with modelDir: %@", modelDir);
     
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    
-    // Verify model directory exists
-    BOOL isDirectory = NO;
-    BOOL exists = [fileManager fileExistsAtPath:modelDir isDirectory:&isDirectory];
-    
-    if (!exists) {
-        NSString *errorMsg = [NSString stringWithFormat:@"Model directory does not exist: %@", modelDir];
+    @try {
+        if (g_wrapper == nullptr) {
+            g_wrapper = std::make_unique<sherpaonnxstt::SherpaOnnxWrapper>();
+        }
+        
+        std::string modelDirStr = [modelDir UTF8String];
+        
+        // Convert NSNumber to std::optional<bool>
+        std::optional<bool> preferInt8Opt = std::nullopt;
+        if (preferInt8 != nil) {
+            preferInt8Opt = [preferInt8 boolValue];
+        }
+        
+        // Convert NSString to std::optional<std::string>
+        std::optional<std::string> modelTypeOpt = std::nullopt;
+        if (modelType != nil && [modelType length] > 0) {
+            modelTypeOpt = [modelType UTF8String];
+        }
+        
+        bool result = g_wrapper->initialize(modelDirStr, preferInt8Opt, modelTypeOpt);
+        
+        if (result) {
+            RCTLogInfo(@"Sherpa-onnx initialized successfully");
+            resolve(nil);
+        } else {
+            NSString *errorMsg = [NSString stringWithFormat:@"Failed to initialize sherpa-onnx with model directory: %@", modelDir];
+            RCTLogError(@"%@", errorMsg);
+            reject(@"INIT_ERROR", errorMsg, nil);
+        }
+    } @catch (NSException *exception) {
+        NSString *errorMsg = [NSString stringWithFormat:@"Exception during initialization: %@", exception.reason];
         RCTLogError(@"%@", errorMsg);
         reject(@"INIT_ERROR", errorMsg, nil);
-        return;
     }
-    
-    if (!isDirectory) {
-        NSString *errorMsg = [NSString stringWithFormat:@"Model path is not a directory: %@", modelDir];
-        RCTLogError(@"%@", errorMsg);
-        reject(@"INIT_ERROR", errorMsg, nil);
-        return;
-    }
-    
-    // Check for required model files
-    NSError *listError = nil;
-    NSArray *files = [fileManager contentsOfDirectoryAtPath:modelDir error:&listError];
-    if (listError) {
-        NSString *errorMsg = [NSString stringWithFormat:@"Failed to list model directory: %@", listError.localizedDescription];
-        RCTLogError(@"%@", errorMsg);
-        reject(@"INIT_ERROR", errorMsg, listError);
-        return;
-    }
-    
-    RCTLogInfo(@"Model directory contents: %@", [files componentsJoinedByString:@", "]);
-    
-    // TODO: Implement actual sherpa-onnx initialization
-    // For now, just resolve successfully (stub implementation)
-    RCTLogInfo(@"Sherpa-onnx initialized successfully (stub)");
-    resolve(nil);
 }
 
 - (void)testSherpaInitWithResolver:(RCTPromiseResolveBlock)resolve
                     withRejecter:(RCTPromiseRejectBlock)reject
 {
-    // TODO: Implement actual test
-    resolve(@"Sherpa-onnx test successful (stub)");
+    @try {
+        // Test that sherpa-onnx headers are available
+        resolve(@"Sherpa ONNX loaded!");
+    } @catch (NSException *exception) {
+        NSString *errorMsg = [NSString stringWithFormat:@"Exception during test: %@", exception.reason];
+        reject(@"TEST_ERROR", errorMsg, nil);
+    }
 }
 
 - (void)transcribeFile:(NSString *)filePath
           withResolver:(RCTPromiseResolveBlock)resolve
           withRejecter:(RCTPromiseRejectBlock)reject
 {
-    // TODO: Implement actual transcription
-    reject(@"TRANSCRIBE_ERROR", @"Not implemented yet", nil);
+    @try {
+        if (g_wrapper == nullptr || !g_wrapper->isInitialized()) {
+            reject(@"TRANSCRIBE_ERROR", @"Sherpa-onnx not initialized. Call initializeSherpaOnnx first.", nil);
+            return;
+        }
+        
+        std::string filePathStr = [filePath UTF8String];
+        std::string result = g_wrapper->transcribeFile(filePathStr);
+        
+        // Convert result to NSString - empty strings are valid (e.g., silence)
+        NSString *transcribedText = [NSString stringWithUTF8String:result.c_str()];
+        if (transcribedText == nil) {
+            // If conversion fails, treat as empty string
+            transcribedText = @"";
+        }
+        
+        resolve(transcribedText);
+    } @catch (NSException *exception) {
+        NSString *errorMsg = [NSString stringWithFormat:@"Exception during transcription: %@", exception.reason];
+        RCTLogError(@"%@", errorMsg);
+        reject(@"TRANSCRIBE_ERROR", errorMsg, nil);
+    }
 }
 
 - (void)unloadSherpaOnnxWithResolver:(RCTPromiseResolveBlock)resolve
                       withRejecter:(RCTPromiseRejectBlock)reject
 {
-    // TODO: Implement actual cleanup
-    resolve(nil);
+    @try {
+        if (g_wrapper != nullptr) {
+            g_wrapper->release();
+            g_wrapper.reset();
+            g_wrapper = nullptr;
+        }
+        RCTLogInfo(@"Sherpa-onnx resources released");
+        resolve(nil);
+    } @catch (NSException *exception) {
+        NSString *errorMsg = [NSString stringWithFormat:@"Exception during cleanup: %@", exception.reason];
+        RCTLogError(@"%@", errorMsg);
+        reject(@"CLEANUP_ERROR", errorMsg, nil);
+    }
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:

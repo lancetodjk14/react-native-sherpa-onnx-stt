@@ -13,7 +13,7 @@ A React Native TurboModule that provides offline speech recognition capabilities
 | Platform | Status  |
 | -------- | ------- |
 | Android  | ✅ Yes  |
-| iOS      | ❌ Soon |
+| iOS      | ✅ Yes  |
 
 ## Supported Model Types
 
@@ -34,6 +34,7 @@ A React Native TurboModule that provides offline speech recognition capabilities
 - ✅ **Model Quantization** - Automatic detection and preference for quantized (int8) models
 - ✅ **Flexible Model Loading** - Asset models, file system models, or auto-detection
 - ✅ **Android Support** - Fully supported on Android
+- ✅ **iOS Support** - Fully supported on iOS (requires sherpa-onnx XCFramework)
 - ✅ **TypeScript Support** - Full TypeScript definitions included
 
 ## Installation
@@ -44,11 +45,44 @@ npm install react-native-sherpa-onnx-stt
 
 ### Android
 
-No additional setup required. The library automatically handles native dependencies.
+No additional setup required. The library automatically handles native dependencies via Gradle.
 
 ### iOS
 
-iOS support is currently not available. This library is Android-only at the moment.
+The sherpa-onnx XCFramework is required but needs to be obtained separately. Simply install CocoaPods dependencies after obtaining the framework:
+
+```sh
+cd ios
+pod install
+```
+
+**Note:** The XCFramework is not bundled with the npm package due to its size. You must obtain it before running `pod install`.
+
+#### Obtaining the XCFramework
+
+1. **Use the prebuilt version** (if available):
+   - The XCFramework may be included in the repository at `ios/Frameworks/sherpa_onnx.xcframework`
+   - If present, no additional steps are required
+
+2. **Build locally** (requires macOS):
+   ```sh
+   git clone https://github.com/k2-fsa/sherpa-onnx.git
+   cd sherpa-onnx
+   git checkout v1.12.23
+   
+   # Note: ONNX Runtime is required for building sherpa-onnx
+   # Make sure ONNX Runtime dependencies are installed
+   ./build-ios.sh
+   cp -r build-ios/sherpa_onnx.xcframework /path/to/your/project/node_modules/react-native-sherpa-onnx-stt/ios/Frameworks/
+   ```
+   
+   **Important:** Building sherpa-onnx requires ONNX Runtime. Make sure all dependencies are installed before running `build-ios.sh`.
+   
+   Replace `/path/to/your/project/` with the actual path to your React Native project. The framework should be copied to `node_modules/react-native-sherpa-onnx-stt/ios/Frameworks/` in your project.
+
+The Podspec will automatically detect and use the framework if it exists in `ios/Frameworks/`.
+
+**Note:** The iOS implementation uses the same C++ wrapper as Android, ensuring consistent behavior across platforms.
 
 ## Quick Start
 
@@ -218,7 +252,7 @@ Resolve a model path configuration to an absolute path.
 
 - React Native >= 0.70
 - Android API 24+ (Android 7.0+)
-- iOS: Not currently supported
+- iOS 13.0+ (requires sherpa-onnx XCFramework - see iOS Setup below)
 
 ## Example Apps
 

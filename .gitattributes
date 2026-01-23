@@ -1,3 +1,6 @@
 *.pbxproj -text
 # specific for windows script files
 *.bat text eol=crlf
+# Large binary files - use Git LFS
+*.a filter=lfs diff=lfs merge=lfs -text
+ios/Frameworks/**/*.a filter=lfs diff=lfs merge=lfs -text

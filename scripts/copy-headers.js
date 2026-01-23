@@ -38,6 +38,10 @@ const IOS_DEST_DIR = path.join(
 
 const HEADER_FILES = ['c-api.h', 'cxx-api.h'];
 
+// C++ API implementation file needed for iOS (compiles the C++ wrapper around C API)
+const CXX_IMPL_FILE = 'cxx-api.cc';
+const IOS_ROOT_DIR = path.join(__dirname, '..', 'ios');
+
 function ensureDirectoryExists(dirPath) {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
@@ -117,6 +121,20 @@ function main() {
     } else {
       failCount++;
     }
+  }
+
+  // Copy C++ API implementation to iOS root (needed for compilation)
+  console.log('\nCopying C++ API implementation to iOS...');
+  const cxxImplSource = path.join(SOURCE_DIR, CXX_IMPL_FILE);
+  const cxxImplDest = path.join(IOS_ROOT_DIR, CXX_IMPL_FILE);
+
+  if (!fs.existsSync(cxxImplSource)) {
+    console.error(`✗ Source file not found: ${cxxImplSource}`);
+    failCount++;
+  } else if (copyFile(cxxImplSource, cxxImplDest)) {
+    successCount++;
+  } else {
+    failCount++;
   }
 
   console.log(`\n${'='.repeat(50)}`);

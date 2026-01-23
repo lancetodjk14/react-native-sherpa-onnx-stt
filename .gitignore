@@ -94,3 +94,12 @@ example/android/app/src/main/assets/models/**/merges.txt
 example/android/app/src/main/assets/models/**/tokens.txt
 example/android/app/src/main/assets/models/**/tokenizer.json
 example/android/app/src/main/assets/models/**/Qwen3-*/
+
+# sherpa-onnx source (if cloned for building)
+sherpa-onnx/
+
+# iOS Frameworks
+# Note: The framework is committed to the repo and included in npm package for easy installation
+# Only ignore build artifacts, not the actual framework
+ios/Frameworks/*.zip
+ios/Frameworks/*.xcarchive

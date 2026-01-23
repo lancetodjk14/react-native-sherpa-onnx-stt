@@ -17,6 +17,7 @@
     "lib",
     "android/src/main/cpp/include/**",
     "ios/include/**",
+    "ios/Frameworks/**",
     "android",
     "ios",
     "*.podspec",
@@ -34,7 +35,8 @@
     "!**/__mocks__",
     "!**/.*",
     "!./sherpa-onnx",
-    "!./sherpa-onnx/**"
+    "!./sherpa-onnx/**",
+    "!ios/Frameworks/.gitkeep"
   ],
   "scripts": {
     "example": "yarn workspace react-native-sherpa-onnx-stt-example",
