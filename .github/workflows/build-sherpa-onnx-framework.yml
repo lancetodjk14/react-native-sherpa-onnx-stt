@@ -319,7 +319,7 @@ jobs:
           # Push LFS objects first, then the commit
           echo ""
           echo "Pushing LFS objects..."
-          git lfs push origin HEAD:${{ github.ref_name }} --all
+          git lfs push origin HEAD --all
           
           # Push to current branch
           echo "Pushing commit..."
