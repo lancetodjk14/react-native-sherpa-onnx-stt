@@ -4,11 +4,10 @@ on:
     branches:
       - main
   push:
-    tags:
-      - 'v*'
     branches:
       - main
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -448,3 +447,55 @@ jobs:
           else
             echo "Warning: Build directory not found"
           fi
+
+      - name: Create iOS IPA file
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "Creating iOS IPA file..."
+
+          # Find the app bundle
+          APP_PATH=$(find example/ios/build -name "*.app" -type d | head -1)
+
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: App bundle not found"
+            exit 1
+          fi
+
+          echo "Found app bundle: $APP_PATH"
+
+          # Create IPA structure
+          IPA_DIR="example/ios/build/ipa"
+          PAYLOAD_DIR="$IPA_DIR/Payload"
+
+          mkdir -p "$PAYLOAD_DIR"
+
+          # Copy app bundle to Payload directory
+          cp -R "$APP_PATH" "$PAYLOAD_DIR/"
+
+          # Create IPA file (ZIP archive)
+          IPA_NAME="SherpaOnnxSttExample.ipa"
+          IPA_PATH="$IPA_DIR/$IPA_NAME"
+
+          cd "$IPA_DIR"
+          zip -r "$IPA_NAME" Payload
+          cd - > /dev/null
+
+          if [ -f "$IPA_PATH" ]; then
+            IPA_SIZE=$(stat -f%z "$IPA_PATH" 2>/dev/null || stat -c%s "$IPA_PATH")
+            IPA_SIZE_MB=$((IPA_SIZE / 1024 / 1024))
+            echo "[OK] IPA file created: $IPA_PATH (${IPA_SIZE_MB}MB)"
+          else
+            echo "Error: IPA file was not created at $IPA_PATH"
+            echo "Checking for IPA files in build directory:"
+            find example/ios/build -name "*.ipa" -type f || echo "No IPA files found"
+            exit 1
+          fi
+
+      - name: Upload iOS IPA artifact
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-bundle
+          path: example/ios/build/ipa/*.ipa
+          retention-days: 7
+          if-no-files-found: error
