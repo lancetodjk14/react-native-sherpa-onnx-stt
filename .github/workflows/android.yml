@@ -1,8 +1,5 @@
 name: Build Android example app
 on:
-  pull_request:
-    branches:
-      - main
   push:
 
 concurrency:
