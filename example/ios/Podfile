@@ -33,75 +33,82 @@ target 'SherpaOnnxSttExample' do
       # :ccache_enabled => true
     )
     
-    # Find SherpaOnnxStt pod and include its xcconfig for proper linking
+    # Configure sherpa-onnx linking
+    # We need to add force_load flags to ensure all symbols are included
+    puts "\n[SherpaOnnxStt] ========================================"
+    puts "[SherpaOnnxStt] Configuring linker flags for sherpa-onnx..."
+    
+    # Find the SherpaOnnxStt pod
     sherpa_pod = installer.pod_targets.find { |t| t.name == 'SherpaOnnxStt' }
-    if sherpa_pod
-      sherpa_pod_path = installer.sandbox.pod_dir('SherpaOnnxStt').to_s
-      sherpa_xcconfig = File.join(sherpa_pod_path, 'ios', 'SherpaOnnxStt.xcconfig')
-      
-      puts "\n[SherpaOnnxStt] Configuring linker flags..."
-      puts "[SherpaOnnxStt] Pod path: #{sherpa_pod_path}"
-      
-      xcframework_path = File.join(sherpa_pod_path, 'ios', 'Frameworks', 'sherpa_onnx.xcframework')
-      
-      if File.exist?(sherpa_xcconfig) && File.exist?(xcframework_path)
-        puts "[SherpaOnnxStt] Found xcconfig at: #{sherpa_xcconfig}"
-        puts "[SherpaOnnxStt] Found XCFramework at: #{xcframework_path}"
-        
-        # Include the SherpaOnnxStt.xcconfig in the app's aggregated xcconfig files
-        # First set SHERPA_ONNX_FRAMEWORK_PATH, then include the xcconfig
-        pods_dir = installer.sandbox.root
-        xcconfig_paths = Dir.glob(File.join(pods_dir, 'Target Support Files', 'Pods-SherpaOnnxSttExample', '*.xcconfig'))
-        
-        xcconfig_paths.each do |xcconfig_path|
-          puts "[SherpaOnnxStt] Patching: #{File.basename(xcconfig_path)}"
-          content = File.read(xcconfig_path)
-          
-          # Check if already includes our xcconfig
-          if content.include?('SherpaOnnxStt.xcconfig')
-            puts "[SherpaOnnxStt]   Already includes SherpaOnnxStt.xcconfig"
-            next
-          end
-          
-          # Add the framework path variable and include directive
-          # The xcconfig uses SHERPA_ONNX_FRAMEWORK_PATH to build conditional paths
-          content += "\n"
-          content += "// SherpaOnnxStt: Set framework path and include xcconfig for conditional library linking\n"
-          content += "SHERPA_ONNX_FRAMEWORK_PATH = #{xcframework_path}\n"
-          content += "#include \"#{sherpa_xcconfig}\"\n"
-          
-          File.write(xcconfig_path, content)
-          puts "[SherpaOnnxStt]   Added SHERPA_ONNX_FRAMEWORK_PATH and #include"
-        end
-        
-        puts "[SherpaOnnxStt] Configuration complete"
-      else
-        puts "[SherpaOnnxStt] WARNING: xcconfig not found at #{sherpa_xcconfig}"
-        puts "[SherpaOnnxStt] Falling back to manual patching..."
-        
-        # Fallback: manually patch if xcconfig doesn't exist
-        xcframework_path = File.join(sherpa_pod_path, 'ios', 'Frameworks', 'sherpa_onnx.xcframework')
-        if File.exist?(xcframework_path)
-          device_lib = File.join(xcframework_path, 'ios-arm64', 'libsherpa-onnx.a')
-          simulator_lib = File.join(xcframework_path, 'ios-arm64_x86_64-simulator', 'libsherpa-onnx.a')
-          
-          pods_dir = installer.sandbox.root
-          xcconfig_paths = Dir.glob(File.join(pods_dir, 'Target Support Files', 'Pods-SherpaOnnxSttExample', '*.xcconfig'))
-          
-          xcconfig_paths.each do |xcconfig_path|
-            content = File.read(xcconfig_path)
-            base_ldflags_match = content.match(/^OTHER_LDFLAGS\s*=\s*(.+)$/m)
-            if base_ldflags_match
-              base_ldflags = base_ldflags_match[1].strip
-              content = content.gsub(/^OTHER_LDFLAGS\[sdk=.*\].*\n/, '')
-              content += "\n// SherpaOnnxStt: Force load (fallback)\n"
-              content += "OTHER_LDFLAGS[sdk=iphoneos*] = #{base_ldflags} -force_load \"#{device_lib}\"\n"
-              content += "OTHER_LDFLAGS[sdk=iphonesimulator*] = #{base_ldflags} -force_load \"#{simulator_lib}\"\n"
-              File.write(xcconfig_path, content)
-            end
-          end
-        end
-      end
+    
+    unless sherpa_pod
+      puts "[SherpaOnnxStt] WARNING: Pod target not found!"
+      puts "[SherpaOnnxStt] Available pod targets: #{installer.pod_targets.map(&:name).join(', ')}"
+      puts "[SherpaOnnxStt] ========================================"
+      next
     end
+    
+    sherpa_pod_path = installer.sandbox.pod_dir('SherpaOnnxStt').to_s
+    puts "[SherpaOnnxStt] Pod path: #{sherpa_pod_path}"
+    
+    xcframework_path = File.join(sherpa_pod_path, 'ios', 'Frameworks', 'sherpa_onnx.xcframework')
+    device_lib = File.join(xcframework_path, 'ios-arm64', 'libsherpa-onnx.a')
+    simulator_lib = File.join(xcframework_path, 'ios-arm64_x86_64-simulator', 'libsherpa-onnx.a')
+    
+    puts "[SherpaOnnxStt] XCFramework path: #{xcframework_path}"
+    puts "[SherpaOnnxStt] Device lib exists: #{File.exist?(device_lib)}"
+    puts "[SherpaOnnxStt] Simulator lib exists: #{File.exist?(simulator_lib)}"
+    
+    unless File.exist?(xcframework_path)
+      puts "[SherpaOnnxStt] ERROR: XCFramework not found!"
+      puts "[SherpaOnnxStt] ========================================"
+      next
+    end
+    
+    # Patch the aggregated xcconfig files for the app target
+    pods_dir = installer.sandbox.root
+    xcconfig_pattern = File.join(pods_dir, 'Target Support Files', 'Pods-SherpaOnnxSttExample', '*.xcconfig')
+    xcconfig_paths = Dir.glob(xcconfig_pattern)
+    
+    puts "[SherpaOnnxStt] Found #{xcconfig_paths.length} xcconfig files to patch"
+    
+    xcconfig_paths.each do |xcconfig_path|
+      filename = File.basename(xcconfig_path)
+      puts "[SherpaOnnxStt] Patching: #{filename}"
+      
+      content = File.read(xcconfig_path)
+      
+      # Skip if already patched
+      if content.include?('SherpaOnnxStt: force_load')
+        puts "[SherpaOnnxStt]   Already patched, skipping"
+        next
+      end
+      
+      # Find the base OTHER_LDFLAGS
+      base_ldflags_match = content.match(/^OTHER_LDFLAGS\s*=\s*(.+)$/)
+      unless base_ldflags_match
+        puts "[SherpaOnnxStt]   WARNING: OTHER_LDFLAGS not found in #{filename}"
+        next
+      end
+      
+      base_ldflags = base_ldflags_match[1].strip
+      puts "[SherpaOnnxStt]   Found base OTHER_LDFLAGS"
+      
+      # Remove any existing conditional OTHER_LDFLAGS
+      content = content.gsub(/^OTHER_LDFLAGS\[sdk=.*\].*\n/, '')
+      
+      # Add the conditional force_load settings
+      # Key: We include the FULL base flags, not just $(inherited)
+      content += "\n"
+      content += "// SherpaOnnxStt: force_load for sherpa-onnx static library\n"
+      content += "OTHER_LDFLAGS[sdk=iphoneos*] = #{base_ldflags} -force_load \"#{device_lib}\"\n"
+      content += "OTHER_LDFLAGS[sdk=iphonesimulator*] = #{base_ldflags} -force_load \"#{simulator_lib}\"\n"
+      
+      File.write(xcconfig_path, content)
+      puts "[SherpaOnnxStt]   Patched with force_load for device and simulator"
+    end
+    
+    puts "[SherpaOnnxStt] Configuration complete"
+    puts "[SherpaOnnxStt] ========================================"
   end
 end
