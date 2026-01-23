@@ -6,6 +6,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -31,6 +33,7 @@ jobs:
 
   build-ios:
     runs-on: macos-15
+    needs: lint
 
     env:
       XCODE_VERSION: 16.4
@@ -45,19 +48,19 @@ jobs:
         run: |
           # Install Git LFS via Homebrew (macOS runner)
           brew install git-lfs
-          
+
           # Initialize Git LFS
           git lfs install
-          
+
           # Pull LFS objects (this replaces pointer files with actual content)
           echo "Pulling Git LFS objects..."
           git lfs pull
-          
+
           # Verify LFS objects were pulled
           echo ""
           echo "Verifying LFS objects:"
           git lfs ls-files | head -5 || echo "No LFS files tracked"
-          
+
           # Check if the library files are actual files (not pointers)
           for arch in ios-arm64 ios-arm64_x86_64-simulator; do
             lib="ios/Frameworks/sherpa_onnx.xcframework/$arch/libsherpa-onnx.a"
@@ -79,37 +82,37 @@ jobs:
       - name: Verify required files exist
         run: |
           echo "Verifying required files..."
-          
+
           # Check header files
           if [ ! -f "ios/include/sherpa-onnx/c-api/c-api.h" ]; then
             echo "Error: iOS header files not found at ios/include/sherpa-onnx/c-api/c-api.h"
             exit 1
           fi
           echo "[OK] Header files found"
-          
+
           # Check XCFramework
           if [ ! -d "ios/Frameworks/sherpa_onnx.xcframework" ]; then
             echo "Error: XCFramework not found at ios/Frameworks/sherpa_onnx.xcframework"
             exit 1
           fi
           echo "[OK] XCFramework found"
-          
+
           # Check xcconfig file
           if [ ! -f "ios/SherpaOnnxStt.xcconfig" ]; then
             echo "Error: xcconfig not found at ios/SherpaOnnxStt.xcconfig"
             exit 1
           fi
           echo "[OK] xcconfig found"
-          
+
           # Verify XCFramework structure
           echo ""
           echo "XCFramework structure:"
           ls -la ios/Frameworks/sherpa_onnx.xcframework/
-          
+
           echo ""
           echo "Verifying architecture slices:"
           MIN_SIZE=52428800  # 50MB - libraries with ONNX Runtime should be >50MB
-          
+
           for arch in ios-arm64 ios-arm64_x86_64-simulator; do
             lib="ios/Frameworks/sherpa_onnx.xcframework/$arch/libsherpa-onnx.a"
             if [ -f "$lib" ]; then
@@ -132,7 +135,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           # Specifically check that simulator library has x86_64
           echo ""
           echo "Verifying x86_64 support in simulator library:"
@@ -145,11 +148,11 @@ jobs:
             exit 1
           fi
           echo "[OK] x86_64 architecture confirmed"
-          
+
           # Check for key sherpa-onnx symbols in the library
           echo ""
           echo "Checking for key sherpa-onnx symbols in library:"
-          
+
           # Check arm64 slice first
           echo "=== arm64 slice ==="
           lipo -extract arm64 "$SIM_LIB" -output /tmp/libsherpa-arm64.a 2>/dev/null || true
@@ -163,7 +166,7 @@ jobs:
             fi
             rm /tmp/libsherpa-arm64.a
           fi
-          
+
           # Check x86_64 slice
           echo "=== x86_64 slice ==="
           lipo -extract x86_64 "$SIM_LIB" -output /tmp/libsherpa-x86_64.a 2>/dev/null || true
@@ -183,7 +186,7 @@ jobs:
           else
             echo "[WARNING] Could not extract x86_64 slice for symbol check"
           fi
-          
+
           # Also check device library arm64
           echo ""
           echo "=== Device library (ios-arm64) ==="
@@ -205,23 +208,23 @@ jobs:
         run: |
           cd example
           bundle install
-          
+
           echo "Running pod install (vendored_frameworks handles XCFramework linking automatically)..."
           echo ""
-          
+
           # Run pod install and capture output to show post_install messages
           bundle exec pod install --project-directory=ios 2>&1 | tee /tmp/pod_install.log
-          
+
           echo ""
           echo "=== Filtering SherpaOnnxStt messages from pod install ==="
           grep -E "\[SherpaOnnxStt\]" /tmp/pod_install.log || echo "No SherpaOnnxStt messages found in pod install output"
-          
+
           # Verify installation
           if [ ! -f "ios/SherpaOnnxSttExample.xcworkspace/contents.xcworkspacedata" ]; then
             echo "Error: Xcode workspace not created"
             exit 1
           fi
-          
+
           echo ""
           echo "[OK] CocoaPods dependencies installed"
 
@@ -243,7 +246,7 @@ jobs:
               echo "[WARNING] LIBRARY_SEARCH_PATHS not found in pod xcconfig"
             fi
           fi
-          
+
           echo ""
           echo "=== Checking App Target xcconfig (vendored_frameworks handles linking automatically) ==="
           # The aggregated settings for the app are in Pods-SherpaOnnxSttExample
@@ -287,7 +290,7 @@ jobs:
             find example/ios/Pods -name "*.xcconfig" -type f | head -20
             exit 1
           fi
-          
+
           echo ""
           echo "=== Verifying header file locations ==="
           if [ -f "ios/include/sherpa-onnx/c-api/cxx-api.h" ]; then
@@ -300,11 +303,11 @@ jobs:
         run: |
           echo "=== Checking Xcode resolved build settings for OTHER_LDFLAGS ==="
           cd example
-          
+
           # List available simulators first
           echo "Available simulators:"
           xcrun simctl list devices available | grep -E "iPhone|iPad" | head -10 || true
-          
+
           # Show the resolved OTHER_LDFLAGS for the app target on simulator
           # Use generic destination to avoid simulator availability issues
           echo ""
@@ -314,7 +317,7 @@ jobs:
             -configuration Debug \
             -sdk iphonesimulator \
             -showBuildSettings 2>&1 | grep -A2 "OTHER_LDFLAGS" | head -20 || echo "Could not get build settings"
-          
+
           echo ""
           echo "Checking if sherpa_onnx framework is linked (vendored_frameworks handles this):"
           SETTINGS=$(xcodebuild -workspace ios/SherpaOnnxSttExample.xcworkspace \
@@ -322,14 +325,14 @@ jobs:
             -configuration Debug \
             -sdk iphonesimulator \
             -showBuildSettings 2>&1) || true
-          
+
           if echo "$SETTINGS" | grep -q "sherpa_onnx"; then
             echo "[OK] sherpa_onnx framework found in resolved build settings"
             echo "$SETTINGS" | grep "sherpa_onnx" | head -5
           else
             echo "[INFO] sherpa_onnx not found in resolved settings (vendored_frameworks may handle linking differently)"
           fi
-          
+
           # Check for force_load (may be from other pods, but not required for sherpa_onnx)
           if echo "$SETTINGS" | grep -q "force_load"; then
             echo "[INFO] force_load found in resolved build settings (may be from other pods)"
@@ -337,19 +340,19 @@ jobs:
           else
             echo "[OK] force_load not found (expected - vendored_frameworks handles sherpa_onnx linking automatically)"
           fi
-          
+
           echo ""
           echo "All OTHER_LDFLAGS entries:"
           echo "$SETTINGS" | grep "OTHER_LDFLAGS" | head -10 || echo "No OTHER_LDFLAGS found"
-          
+
           echo ""
           echo "FRAMEWORK_SEARCH_PATHS:"
           echo "$SETTINGS" | grep "FRAMEWORK_SEARCH_PATHS" | head -5 || echo "No FRAMEWORK_SEARCH_PATHS found"
-          
+
           echo ""
           echo "LIBRARY_SEARCH_PATHS:"
           echo "$SETTINGS" | grep "LIBRARY_SEARCH_PATHS" | head -5 || echo "No LIBRARY_SEARCH_PATHS found"
-          
+
           # Check the Xcode project file directly for build settings
           echo ""
           echo "=== Checking Xcode project for framework linking ==="
@@ -360,7 +363,7 @@ jobs:
             echo "[INFO] sherpa_onnx not found directly in Xcode project file"
             echo "This is expected - vendored_frameworks handles linking via CocoaPods"
           fi
-          
+
           # Note about force_load
           if grep -q "force_load" "ios/SherpaOnnxSttExample.xcodeproj/project.pbxproj"; then
             echo "[INFO] force_load found in Xcode project file (may be from other pods)"
@@ -374,9 +377,9 @@ jobs:
         run: |
           set -o pipefail
           echo "Building iOS example app for simulator..."
-          
+
           cd example
-          
+
           # Build for simulator using -sdk flag (more reliable than -destination)
           # This builds for the current architecture of the Mac runner
           if ! xcodebuild \
@@ -390,11 +393,11 @@ jobs:
             > /tmp/build.full.log 2>&1; then
             BUILD_FAILED=1
           fi
-          
+
           # Display filtered output (errors, warnings, important messages)
           echo "=== Filtered Build Output ==="
           grep -E "(: error:|: warning:|BUILD SUCCEEDED|BUILD FAILED|Undefined symbols|fatal error)" /tmp/build.full.log | head -100 || true
-          
+
           if [ "${BUILD_FAILED:-0}" = "1" ]; then
             echo ""
             echo "=== Build failed. Full error analysis ==="
@@ -425,13 +428,13 @@ jobs:
             tail -50 /tmp/build.full.log
             exit 1
           fi
-          
+
           echo "[OK] iOS build completed successfully"
 
       - name: Verify build artifacts
         run: |
           echo "Verifying build artifacts..."
-          
+
           if [ -d "example/ios/build" ]; then
             echo "[OK] Build directory exists"
             
