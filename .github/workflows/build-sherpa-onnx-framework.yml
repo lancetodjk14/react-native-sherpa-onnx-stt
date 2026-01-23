@@ -52,17 +52,17 @@ jobs:
         run: |
           cd sherpa-onnx-source
           chmod +x build-ios.sh
-          
+
           echo "Building sherpa-onnx XCFramework (this may take several minutes)..."
-          
+
           # Accept Xcode license if needed
           sudo xcodebuild -license accept > /dev/null 2>&1 || true
-          
+
           # Build the framework with reduced output
           # Suppress libtool warnings (they're normal and not critical)
           # Only show progress indicators and errors
           ./build-ios.sh 2>&1 | grep -E "(Building|Generating|Creating|Error|error|fatal|FAILED|SUCCESS|xcframework|Framework)" || true
-          
+
           # Check for both possible framework names (sherpa-onnx.xcframework or sherpa_onnx.xcframework)
           FRAMEWORK_NAME=""
           if [ -d "build-ios/sherpa-onnx.xcframework" ]; then
@@ -75,7 +75,7 @@ jobs:
             ls -la build-ios/ | head -20
             exit 1
           fi
-          
+
           echo "XCFramework built: $FRAMEWORK_NAME"
           echo "Framework size (before adding onnxruntime):"
           du -sh "build-ios/$FRAMEWORK_NAME"
@@ -83,34 +83,34 @@ jobs:
       - name: Add ONNX Runtime to XCFramework
         run: |
           cd sherpa-onnx-source/build-ios
-          
+
           echo "Adding ONNX Runtime library to sherpa-onnx static library..."
-          
+
           # The build script downloads onnxruntime to ios-onnxruntime/
           ONNXRUNTIME_DIR="ios-onnxruntime/onnxruntime.xcframework"
-          
+
           if [ ! -d "$ONNXRUNTIME_DIR" ]; then
             echo "Error: ONNX Runtime XCFramework not found at $ONNXRUNTIME_DIR"
             ls -la ios-onnxruntime/ || true
             exit 1
           fi
-          
+
           echo "Found ONNX Runtime at: $ONNXRUNTIME_DIR"
           ls -la "$ONNXRUNTIME_DIR"
-          
+
           # Determine framework name
           if [ -d "sherpa-onnx.xcframework" ]; then
             FRAMEWORK_NAME="sherpa-onnx.xcframework"
           else
             FRAMEWORK_NAME="sherpa_onnx.xcframework"
           fi
-          
+
           # For each architecture slice, combine sherpa-onnx.a with onnxruntime.a
           echo ""
           echo "=== Combining libraries for ios-arm64 ==="
           SHERPA_LIB="$FRAMEWORK_NAME/ios-arm64/libsherpa-onnx.a"
           ONNX_LIB="$ONNXRUNTIME_DIR/ios-arm64/onnxruntime.a"
-          
+
           if [ -f "$SHERPA_LIB" ] && [ -f "$ONNX_LIB" ]; then
             echo "Combining: $SHERPA_LIB + $ONNX_LIB"
             mv "$SHERPA_LIB" "${SHERPA_LIB}.original"
@@ -124,12 +124,12 @@ jobs:
             echo "  ONNX_LIB exists: $([ -f "$ONNX_LIB" ] && echo 'yes' || echo 'no')"
             exit 1
           fi
-          
+
           echo ""
           echo "=== Combining libraries for ios-arm64_x86_64-simulator ==="
           SHERPA_LIB="$FRAMEWORK_NAME/ios-arm64_x86_64-simulator/libsherpa-onnx.a"
           ONNX_LIB="$ONNXRUNTIME_DIR/ios-arm64_x86_64-simulator/onnxruntime.a"
-          
+
           if [ -f "$SHERPA_LIB" ] && [ -f "$ONNX_LIB" ]; then
             echo "Combining: $SHERPA_LIB + $ONNX_LIB"
             mv "$SHERPA_LIB" "${SHERPA_LIB}.original"
@@ -143,7 +143,7 @@ jobs:
             echo "  ONNX_LIB exists: $([ -f "$ONNX_LIB" ] && echo 'yes' || echo 'no')"
             exit 1
           fi
-          
+
           echo ""
           echo "XCFramework updated with ONNX Runtime"
           echo "Final framework size:"
@@ -152,7 +152,7 @@ jobs:
       - name: Prepare framework directory
         run: |
           mkdir -p ios/Frameworks
-          
+
           # Determine framework name from build output
           if [ -d "sherpa-onnx-source/build-ios/sherpa-onnx.xcframework" ]; then
             SOURCE_FRAMEWORK="sherpa-onnx.xcframework"
@@ -166,21 +166,21 @@ jobs:
             ls -la sherpa-onnx-source/build-ios/ | head -20
             exit 1
           fi
-          
+
           # IMPORTANT: Remove existing framework first to avoid nesting issues
           # cp -R on macOS copies INTO existing directories instead of replacing them
           echo "Removing existing framework (if any)..."
           rm -rf "ios/Frameworks/$TARGET_FRAMEWORK"
-          
+
           # Copy framework to target location
           cp -R "sherpa-onnx-source/build-ios/$SOURCE_FRAMEWORK" "ios/Frameworks/$TARGET_FRAMEWORK"
-          
+
           # Verify copy succeeded
           if [ ! -d "ios/Frameworks/$TARGET_FRAMEWORK" ]; then
             echo "Error: Failed to copy XCFramework"
             exit 1
           fi
-          
+
           echo "Framework copied successfully to ios/Frameworks/$TARGET_FRAMEWORK"
           du -sh ios/Frameworks/$TARGET_FRAMEWORK
 
@@ -188,10 +188,10 @@ jobs:
         run: |
           echo "Verifying library sizes contain ONNX Runtime..."
           MIN_SIZE=52428800  # 50MB in bytes - libraries with ONNX Runtime should be >50MB
-          
+
           DEVICE_LIB="ios/Frameworks/sherpa_onnx.xcframework/ios-arm64/libsherpa-onnx.a"
           SIM_LIB="ios/Frameworks/sherpa_onnx.xcframework/ios-arm64_x86_64-simulator/libsherpa-onnx.a"
-          
+
           for lib in "$DEVICE_LIB" "$SIM_LIB"; do
             if [ ! -f "$lib" ]; then
               echo "ERROR: Library not found: $lib"
@@ -215,7 +215,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           echo ""
           echo "SUCCESS: Both libraries are correctly sized with ONNX Runtime included."
 
@@ -256,10 +256,10 @@ jobs:
         run: |
           # Install Git LFS via Homebrew (macOS runner)
           brew install git-lfs
-          
+
           # Initialize Git LFS
           git lfs install
-          
+
           # Verify Git LFS is working
           git lfs version
 
@@ -268,32 +268,32 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           # Ensure .gitattributes is up to date for LFS
           git add .gitattributes
-          
+
           # Track .a files with Git LFS
           git lfs track "ios/Frameworks/**/*.a"
           git add .gitattributes
-          
+
           # Remove .gitkeep if framework exists
           if [ -d "ios/Frameworks/sherpa_onnx.xcframework" ]; then
             rm -f ios/Frameworks/.gitkeep
           fi
-          
+
           # Remove any cached/staged versions of the old files first
           # This is important when replacing LFS pointer files with actual content
           git rm -rf --cached ios/Frameworks/sherpa_onnx.xcframework 2>/dev/null || true
-          
+
           # Add the framework files fresh
           # Git LFS will automatically handle the .a files based on .gitattributes
           git add ios/Frameworks/sherpa_onnx.xcframework
           git add ios/Frameworks/.gitkeep 2>/dev/null || true
-          
+
           # Verify files are tracked by LFS
           echo "Checking Git LFS tracking for staged files:"
           git lfs status | head -20
-          
+
           # Verify actual file sizes being committed
           echo ""
           echo "Verifying file sizes in staging area:"
@@ -304,27 +304,27 @@ jobs:
               echo "  $arch: $size_human"
             fi
           done
-          
+
           # Check if there are staged changes
           if git diff --cached --quiet; then
             echo "No staged changes to commit"
             exit 0
           fi
-          
+
           git commit -m "chore: Update sherpa-onnx XCFramework to ${{ env.SHERPA_ONNX_VERSION }} [skip ci]"
-          
+
           # Configure git to use the token for pushing
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          
+
           # Push LFS objects first, then the commit
           echo ""
           echo "Pushing LFS objects..."
           git lfs push origin HEAD --all
-          
+
           # Push to current branch
           echo "Pushing commit..."
           git push origin HEAD:${{ github.ref_name }}
-          
+
           echo ""
           echo "Successfully committed and pushed framework with ONNX Runtime included."
 
