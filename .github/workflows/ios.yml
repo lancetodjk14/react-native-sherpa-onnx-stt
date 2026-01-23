@@ -200,7 +200,7 @@ jobs:
           cd example
           bundle install
           
-          echo "Running pod install (post_install hook will configure force_load)..."
+          echo "Running pod install (vendored_frameworks handles XCFramework linking automatically)..."
           echo ""
           
           # Run pod install and capture output to show post_install messages
@@ -239,39 +239,41 @@ jobs:
           fi
           
           echo ""
-          echo "=== Checking App Target xcconfig (should be patched by post_install) ==="
+          echo "=== Checking App Target xcconfig (vendored_frameworks handles linking automatically) ==="
           # The aggregated settings for the app are in Pods-SherpaOnnxSttExample
           APP_XCCONFIG="example/ios/Pods/Target Support Files/Pods-SherpaOnnxSttExample/Pods-SherpaOnnxSttExample.debug.xcconfig"
           if [ -f "$APP_XCCONFIG" ]; then
             echo "App xcconfig found at: $APP_XCCONFIG"
             echo ""
             
-            # Show the last 15 lines which should contain our patch
-            echo "Last 15 lines of xcconfig (should show force_load patch):"
+            # Show the last 15 lines
+            echo "Last 15 lines of xcconfig:"
             tail -15 "$APP_XCCONFIG"
             echo ""
             
-            echo "Checking for force_load:"
-            if grep -q "force_load" "$APP_XCCONFIG"; then
-              echo "[OK] force_load found in app xcconfig"
-              grep "force_load" "$APP_XCCONFIG"
+            # Check for FRAMEWORK_SEARCH_PATHS containing sherpa_onnx (vendored_frameworks adds this)
+            echo "Checking for XCFramework linking configuration:"
+            if grep -q "sherpa_onnx" "$APP_XCCONFIG"; then
+              echo "[OK] sherpa_onnx framework referenced in app xcconfig"
+              grep "sherpa_onnx" "$APP_XCCONFIG" | head -3
             else
-              echo "[ERROR] force_load NOT found in app xcconfig!"
-              echo ""
-              echo "Possible reasons:"
-              echo "  1. Podfile post_install hook didn't run"
-              echo "  2. SherpaOnnxStt pod wasn't found"
-              echo "  3. XCFramework path not found"
-              echo ""
-              echo "Full xcconfig content:"
-              cat "$APP_XCCONFIG"
-              exit 1
+              echo "[WARNING] sherpa_onnx framework not directly referenced in xcconfig"
+              echo "Note: vendored_frameworks may handle linking automatically via OTHER_LDFLAGS"
             fi
             
-            if grep -q "libsherpa-onnx.a" "$APP_XCCONFIG"; then
-              echo "[OK] libsherpa-onnx.a referenced in app xcconfig"
+            # Check FRAMEWORK_SEARCH_PATHS
+            if grep -q "FRAMEWORK_SEARCH_PATHS.*sherpa" "$APP_XCCONFIG"; then
+              echo "[OK] FRAMEWORK_SEARCH_PATHS contains sherpa_onnx path"
             else
-              echo "[WARNING] libsherpa-onnx.a not directly referenced"
+              echo "[INFO] FRAMEWORK_SEARCH_PATHS check (vendored_frameworks may handle this differently)"
+            fi
+            
+            # Note: force_load is no longer needed - vendored_frameworks handles linking automatically
+            if grep -q "force_load" "$APP_XCCONFIG"; then
+              echo "[INFO] force_load found (may be from other pods or legacy config)"
+              grep "force_load" "$APP_XCCONFIG" | head -3
+            else
+              echo "[OK] force_load not found (expected - vendored_frameworks handles linking automatically)"
             fi
           else
             echo "Error: App xcconfig not found at expected path"
@@ -308,23 +310,35 @@ jobs:
             -showBuildSettings 2>&1 | grep -A2 "OTHER_LDFLAGS" | head -20 || echo "Could not get build settings"
           
           echo ""
-          echo "Checking if force_load appears in resolved settings:"
+          echo "Checking if sherpa_onnx framework is linked (vendored_frameworks handles this):"
           SETTINGS=$(xcodebuild -workspace ios/SherpaOnnxSttExample.xcworkspace \
             -scheme SherpaOnnxSttExample \
             -configuration Debug \
             -sdk iphonesimulator \
             -showBuildSettings 2>&1) || true
           
+          if echo "$SETTINGS" | grep -q "sherpa_onnx"; then
+            echo "[OK] sherpa_onnx framework found in resolved build settings"
+            echo "$SETTINGS" | grep "sherpa_onnx" | head -5
+          else
+            echo "[INFO] sherpa_onnx not found in resolved settings (vendored_frameworks may handle linking differently)"
+          fi
+          
+          # Check for force_load (may be from other pods, but not required for sherpa_onnx)
           if echo "$SETTINGS" | grep -q "force_load"; then
-            echo "[OK] force_load found in resolved build settings"
+            echo "[INFO] force_load found in resolved build settings (may be from other pods)"
             echo "$SETTINGS" | grep "force_load" | head -5
           else
-            echo "[WARNING] force_load NOT found in resolved build settings"
-            echo "This means the xcconfig conditional settings are not being applied correctly"
-            echo ""
-            echo "All OTHER_LDFLAGS entries:"
-            echo "$SETTINGS" | grep "OTHER_LDFLAGS" | head -10 || echo "No OTHER_LDFLAGS found"
+            echo "[OK] force_load not found (expected - vendored_frameworks handles sherpa_onnx linking automatically)"
           fi
+          
+          echo ""
+          echo "All OTHER_LDFLAGS entries:"
+          echo "$SETTINGS" | grep "OTHER_LDFLAGS" | head -10 || echo "No OTHER_LDFLAGS found"
+          
+          echo ""
+          echo "FRAMEWORK_SEARCH_PATHS:"
+          echo "$SETTINGS" | grep "FRAMEWORK_SEARCH_PATHS" | head -5 || echo "No FRAMEWORK_SEARCH_PATHS found"
           
           echo ""
           echo "LIBRARY_SEARCH_PATHS:"
@@ -332,13 +346,21 @@ jobs:
           
           # Check the Xcode project file directly for build settings
           echo ""
-          echo "=== Checking Xcode project for force_load in build settings ==="
+          echo "=== Checking Xcode project for framework linking ==="
+          if grep -q "sherpa_onnx" "ios/SherpaOnnxSttExample.xcodeproj/project.pbxproj"; then
+            echo "[OK] sherpa_onnx framework found in Xcode project file"
+            grep "sherpa_onnx" "ios/SherpaOnnxSttExample.xcodeproj/project.pbxproj" | head -5
+          else
+            echo "[INFO] sherpa_onnx not found directly in Xcode project file"
+            echo "This is expected - vendored_frameworks handles linking via CocoaPods"
+          fi
+          
+          # Note about force_load
           if grep -q "force_load" "ios/SherpaOnnxSttExample.xcodeproj/project.pbxproj"; then
-            echo "[OK] force_load found in Xcode project file"
+            echo "[INFO] force_load found in Xcode project file (may be from other pods)"
             grep "force_load" "ios/SherpaOnnxSttExample.xcodeproj/project.pbxproj" | head -5
           else
-            echo "[WARNING] force_load NOT found directly in Xcode project file"
-            echo "This is expected if using xcconfig, but indicates the post_install Xcodeproj patching may have failed"
+            echo "[OK] force_load not found directly in Xcode project file (expected for sherpa_onnx)"
           fi
         continue-on-error: true
 
