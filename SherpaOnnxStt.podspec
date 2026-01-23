@@ -52,9 +52,12 @@ Pod::Spec.new do |s|
   puts "[SherpaOnnxStt] Include path: #{ios_include_path}"
   puts "[SherpaOnnxStt] Framework path: #{framework_path}"
   
-  # Preserve XCFramework and headers
+  # Use vendored_frameworks for the XCFramework - this properly handles
+  # architecture-specific linking for static libraries within XCFrameworks
+  s.vendored_frameworks = 'ios/Frameworks/sherpa_onnx.xcframework'
+  
+  # Preserve headers and config files
   s.preserve_paths = [
-    'ios/Frameworks/sherpa_onnx.xcframework',
     'ios/SherpaOnnxStt.xcconfig',
     'ios/include/**/*'
   ]

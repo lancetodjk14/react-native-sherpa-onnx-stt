@@ -118,11 +118,77 @@ jobs:
                 echo "        Please run the build-sherpa-onnx-framework workflow to rebuild with ONNX Runtime."
                 exit 1
               fi
+              
+              # Verify architectures in the static library using lipo
+              echo "    Architectures: $(lipo -archs "$lib" 2>/dev/null || echo 'unable to determine')"
             else
               echo "[ERROR] $arch/libsherpa-onnx.a NOT FOUND"
               exit 1
             fi
           done
+          
+          # Specifically check that simulator library has x86_64
+          echo ""
+          echo "Verifying x86_64 support in simulator library:"
+          SIM_LIB="ios/Frameworks/sherpa_onnx.xcframework/ios-arm64_x86_64-simulator/libsherpa-onnx.a"
+          ARCHS=$(lipo -archs "$SIM_LIB" 2>/dev/null)
+          echo "  Architectures in simulator lib: $ARCHS"
+          if [[ "$ARCHS" != *"x86_64"* ]]; then
+            echo "[ERROR] x86_64 architecture NOT found in simulator library!"
+            echo "        This will cause linker errors on Intel Macs and x86_64 simulators."
+            exit 1
+          fi
+          echo "[OK] x86_64 architecture confirmed"
+          
+          # Check for key sherpa-onnx symbols in the library
+          echo ""
+          echo "Checking for key sherpa-onnx symbols in library:"
+          
+          # Check arm64 slice first
+          echo "=== arm64 slice ==="
+          lipo -extract arm64 "$SIM_LIB" -output /tmp/libsherpa-arm64.a 2>/dev/null || true
+          if [ -f /tmp/libsherpa-arm64.a ]; then
+            arm64_symbols=$(nm /tmp/libsherpa-arm64.a 2>/dev/null | grep -c "OfflineRecognizer" || echo "0")
+            echo "  OfflineRecognizer symbol count: $arm64_symbols"
+            if [ "$arm64_symbols" -gt "0" ]; then
+              echo "[OK] OfflineRecognizer symbols found in arm64 slice"
+            else
+              echo "[WARNING] OfflineRecognizer symbols NOT found in arm64 slice"
+            fi
+            rm /tmp/libsherpa-arm64.a
+          fi
+          
+          # Check x86_64 slice
+          echo "=== x86_64 slice ==="
+          lipo -extract x86_64 "$SIM_LIB" -output /tmp/libsherpa-x86_64.a 2>/dev/null || true
+          if [ -f /tmp/libsherpa-x86_64.a ]; then
+            x86_symbols=$(nm /tmp/libsherpa-x86_64.a 2>/dev/null | grep -c "OfflineRecognizer" || echo "0")
+            echo "  OfflineRecognizer symbol count: $x86_symbols"
+            if [ "$x86_symbols" -gt "0" ]; then
+              echo "[OK] OfflineRecognizer symbols found in x86_64 slice"
+            else
+              echo "[ERROR] OfflineRecognizer symbols NOT found in x86_64 slice!"
+              echo "  This indicates the library was not built correctly for x86_64"
+              echo ""
+              echo "Sample symbols in x86_64 slice:"
+              nm /tmp/libsherpa-x86_64.a 2>/dev/null | grep "sherpa_onnx" | head -20 || echo "  No sherpa_onnx symbols found"
+            fi
+            rm /tmp/libsherpa-x86_64.a
+          else
+            echo "[WARNING] Could not extract x86_64 slice for symbol check"
+          fi
+          
+          # Also check device library arm64
+          echo ""
+          echo "=== Device library (ios-arm64) ==="
+          DEVICE_LIB="ios/Frameworks/sherpa_onnx.xcframework/ios-arm64/libsherpa-onnx.a"
+          device_symbols=$(nm "$DEVICE_LIB" 2>/dev/null | grep -c "OfflineRecognizer" || echo "0")
+          echo "  OfflineRecognizer symbol count: $device_symbols"
+          if [ "$device_symbols" -gt "0" ]; then
+            echo "[OK] OfflineRecognizer symbols found in device library"
+          else
+            echo "[WARNING] OfflineRecognizer symbols NOT found in device library"
+          fi
 
       - name: Use appropriate Xcode version
         uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd # v1.6.0
@@ -222,6 +288,53 @@ jobs:
             echo "[ERROR] Header files missing!"
           fi
 
+      - name: Show resolved Xcode build settings
+        run: |
+          echo "=== Checking Xcode resolved build settings for OTHER_LDFLAGS ==="
+          cd example
+          
+          # Show the resolved OTHER_LDFLAGS for the app target on simulator
+          echo "Resolved OTHER_LDFLAGS for Debug-iphonesimulator:"
+          xcodebuild -workspace ios/SherpaOnnxSttExample.xcworkspace \
+            -scheme SherpaOnnxSttExample \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -showBuildSettings 2>/dev/null | grep -A2 "OTHER_LDFLAGS" | head -20 || true
+          
+          echo ""
+          echo "Checking if force_load appears in resolved settings:"
+          SETTINGS=$(xcodebuild -workspace ios/SherpaOnnxSttExample.xcworkspace \
+            -scheme SherpaOnnxSttExample \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -showBuildSettings 2>/dev/null)
+          
+          if echo "$SETTINGS" | grep -q "force_load"; then
+            echo "[OK] force_load found in resolved build settings"
+            echo "$SETTINGS" | grep "force_load" | head -5
+          else
+            echo "[WARNING] force_load NOT found in resolved build settings"
+            echo "This means the xcconfig conditional settings are not being applied correctly"
+            echo ""
+            echo "All OTHER_LDFLAGS entries:"
+            echo "$SETTINGS" | grep "OTHER_LDFLAGS" | head -10
+          fi
+          
+          echo ""
+          echo "LIBRARY_SEARCH_PATHS:"
+          echo "$SETTINGS" | grep "LIBRARY_SEARCH_PATHS" | head -5
+          
+          # Check the Xcode project file directly for build settings
+          echo ""
+          echo "=== Checking Xcode project for force_load in build settings ==="
+          if grep -q "force_load" "ios/SherpaOnnxSttExample.xcodeproj/project.pbxproj"; then
+            echo "[OK] force_load found in Xcode project file"
+            grep "force_load" "ios/SherpaOnnxSttExample.xcodeproj/project.pbxproj" | head -5
+          else
+            echo "[WARNING] force_load NOT found directly in Xcode project file"
+            echo "This is expected if using xcconfig, but indicates the post_install Xcodeproj patching may have failed"
+          fi
+
       - name: Build example for iOS
         run: |
           set -o pipefail
@@ -229,12 +342,13 @@ jobs:
           
           cd example
           
-          # Build and save full log to file
+          # Build for a specific simulator
+          # Using a specific destination for proper xcconfig resolution
           if ! xcodebuild \
             -workspace ios/SherpaOnnxSttExample.xcworkspace \
             -scheme SherpaOnnxSttExample \
             -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
             -derivedDataPath ios/build \
             CODE_SIGNING_ALLOWED=NO \
             > /tmp/build.full.log 2>&1; then
