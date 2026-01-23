@@ -20,7 +20,8 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/XDcobra/react-native-sherpa-onnx-stt.git", :tag => "#{s.version}" }
 
   # Source files (implementation)
-  s.source_files = "ios/**/*.{h,m,mm,swift,cpp}"
+  # Include .cc for cxx-api.cc (C++ wrapper around C API)
+  s.source_files = "ios/**/*.{h,m,mm,swift,cpp,cc}"
   
   # Private headers (our wrapper headers)
   s.private_header_files = [
