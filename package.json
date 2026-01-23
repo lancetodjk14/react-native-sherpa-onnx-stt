@@ -1,6 +1,6 @@
 {
   "name": "react-native-sherpa-onnx-stt",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "description": "Offline Speech-to-Text with sherpa-onnx for React Native",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
