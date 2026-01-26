@@ -1,5 +1,11 @@
 # react-native-sherpa-onnx-stt
 
+> ### ⚠️ Deprecation Notice
+>
+> This package is **deprecated** and no longer maintained.  
+> Please use the new, actively maintained package instead:  
+> **react-native-sherpa-onnx** → https://github.com/XDcobra/react-native-sherpa-onnx
+
 Offline Speech-to-Text with sherpa-onnx for React Native
 
 [![npm version](https://img.shields.io/npm/v/react-native-sherpa-onnx-stt.svg)](https://www.npmjs.com/package/react-native-sherpa-onnx-stt)

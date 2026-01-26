@@ -12,6 +12,7 @@
     },
     "./package.json": "./package.json"
   },
+  "deprecated": "Use react-native-sherpa-onnx instead: https://www.npmjs.com/package/react-native-sherpa-onnx",
   "files": [
     "src",
     "lib",
